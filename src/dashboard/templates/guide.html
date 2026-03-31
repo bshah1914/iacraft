@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IaCraft — User Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f8f9fa;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-right {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #374151;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .btn:hover {
+            border-color: #7c3aed;
+            color: #7c3aed;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #6366f1);
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 2px 8px rgba(124,58,237,0.3);
+        }
+
+        /* Sidebar TOC */
+        .layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: calc(100vh - 57px);
+        }
+        .toc {
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            padding: 20px;
+            position: sticky;
+            top: 57px;
+            height: calc(100vh - 57px);
+            overflow-y: auto;
+        }
+        .toc h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #9ca3af;
+            margin-bottom: 12px;
+        }
+        .toc a {
+            display: block;
+            padding: 6px 10px;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 13px;
+            border-radius: 6px;
+            margin-bottom: 2px;
+            transition: all 0.15s;
+        }
+        .toc a:hover {
+            background: #f3f4f6;
+            color: #7c3aed;
+        }
+        .toc a.active {
+            background: #f5f3ff;
+            color: #7c3aed;
+            font-weight: 500;
+        }
+
+        /* Content */
+        .content {
+            padding: 40px 60px;
+            max-width: 900px;
+        }
+        .content h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .content h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 32px 0 12px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #1a1a2e;
+        }
+        .content h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin: 24px 0 8px;
+            color: #374151;
+        }
+        .content p {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #4b5563;
+            margin-bottom: 12px;
+        }
+        .content ul, .content ol {
+            padding-left: 24px;
+            margin-bottom: 12px;
+        }
+        .content li {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #4b5563;
+            margin-bottom: 4px;
+        }
+        .content code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #7c3aed;
+        }
+        .content pre {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            padding: 16px 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 12px 0 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .content pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 20px;
+            font-size: 14px;
+        }
+        .content th {
+            background: #f9fafb;
+            font-weight: 600;
+            text-align: left;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+        }
+        .content td {
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            color: #4b5563;
+        }
+        .content tr:hover td {
+            background: #f9fafb;
+        }
+        .content blockquote {
+            border-left: 3px solid #7c3aed;
+            padding: 12px 16px;
+            margin: 16px 0;
+            background: #f5f3ff;
+            border-radius: 0 8px 8px 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .content hr {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 24px 0;
+        }
+        .content strong {
+            color: #1a1a2e;
+        }
+
+        /* Print */
+        @media print {
+            .header, .toc { display: none; }
+            .layout { grid-template-columns: 1fr; }
+            .content { padding: 20px; max-width: 100%; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr; }
+            .toc { display: none; }
+            .content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <img src="/static/logo.svg" width="28" height="28">
+        <h1>IaCraft User Guide</h1>
+    </div>
+    <div class="header-right">
+        <button class="btn" onclick="window.print()">Print</button>
+        <a href="/dashboard" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="layout">
+    <nav class="toc" id="toc">
+        <h3>Contents</h3>
+    </nav>
+    <main class="content" id="content"></main>
+</div>
+
+<script>
+    // Render markdown
+    const raw = {{ guide_content | tojson }};
+    document.getElementById('content').innerHTML = marked.parse(raw);
+
+    // Build TOC from headings
+    const headings = document.querySelectorAll('.content h2');
+    const tocEl = document.getElementById('toc');
+    headings.forEach((h, i) => {
+        const id = 'section-' + i;
+        h.id = id;
+        const a = document.createElement('a');
+        a.href = '#' + id;
+        a.textContent = h.textContent;
+        a.onclick = () => {
+            document.querySelectorAll('.toc a').forEach(x => x.classList.remove('active'));
+            a.classList.add('active');
+        };
+        tocEl.appendChild(a);
+    });
+
+    // Highlight active section on scroll
+    window.addEventListener('scroll', () => {
+        let current = '';
+        headings.forEach(h => {
+            if (h.getBoundingClientRect().top < 100) current = h.id;
+        });
+        document.querySelectorAll('.toc a').forEach(a => {
+            a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+        });
+    });
+</script>
+
+</body>
+</html>

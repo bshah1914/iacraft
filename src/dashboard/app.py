@@ -121,6 +121,18 @@ async def logout(request: Request):
     return response
 
 
+@app.get("/guide", response_class=HTMLResponse)
+async def user_guide(request: Request):
+    """Serve User Guide page."""
+    if not _check_session(request):
+        return RedirectResponse("/login")
+    guide_path = Path(__file__).parent.parent.parent / "USER_GUIDE.md"
+    content = ""
+    if guide_path.exists():
+        content = guide_path.read_text(encoding="utf-8")
+    return templates.TemplateResponse("guide.html", {"request": request, "guide_content": content})
+
+
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     """Render the main dashboard (protected)."""
