@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IaCraft — Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad: false, theme: 'dark', securityLevel: 'loose'});</script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #121218;
+            --bg-gradient: linear-gradient(135deg, #121218 0%, #16162a 25%, #141425 50%, #111120 75%, #0e0e1a 100%);
+            --glass: rgba(255,255,255,0.06);
+            --glass-hover: rgba(255,255,255,0.1);
+            --glass-active: rgba(255,255,255,0.14);
+            --glass-border: rgba(255,255,255,0.12);
+            --glass-border-hover: rgba(255,255,255,0.22);
+            --glass-blur: blur(20px);
+            --glass-blur-light: blur(12px);
+            --surface: rgba(255,255,255,0.05);
+            --surface2: rgba(255,255,255,0.08);
+            --surface3: rgba(255,255,255,0.12);
+            --border: rgba(255,255,255,0.1);
+            --border-hover: rgba(255,255,255,0.18);
+            --text: #e8e8ed;
+            --text-dim: rgba(255,255,255,0.55);
+            --accent: #a855f7;
+            --accent-hover: #c084fc;
+            --accent-bg: rgba(168,85,247,0.15);
+            --green: #4ade80;
+            --green-bg: rgba(74,222,128,0.12);
+            --red: #f87171;
+            --red-bg: rgba(248,113,113,0.12);
+            --yellow: #fbbf24;
+            --yellow-bg: rgba(251,191,36,0.12);
+            --blue: #3b82f6;
+            --blue-bg: rgba(59,130,246,0.12);
+            --orange: #fb923c;
+            --radius: 10px;
+            --radius-lg: 14px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 40px rgba(0,0,0,0.4);
+            --glow-purple: 0 0 30px rgba(168,85,247,0.15);
+            --glow-blue: 0 0 30px rgba(59,130,246,0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            background-image: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Ambient background orbs */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.3;
+            z-index: 0;
+            pointer-events: none;
+        }
+        body::before {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(168,85,247,0.3), transparent 70%);
+            top: -200px; left: -100px;
+        }
+        body::after {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59,130,246,0.25), transparent 70%);
+            bottom: -150px; right: -100px;
+        }
+
+        /* Glass card mixin via class */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #a855f7, #c084fc, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            backdrop-filter: var(--glass-blur-light);
+            -webkit-backdrop-filter: var(--glass-blur-light);
+            border: 1px solid var(--glass-border);
+        }
+        .status-idle { background: rgba(255,255,255,0.05); color: var(--text-dim); }
+        .status-running { background: var(--blue-bg); color: var(--blue); border-color: rgba(59,130,246,0.3) !important; animation: pulse 2s infinite; box-shadow: 0 0 20px rgba(59,130,246,0.2); }
+        .status-complete { background: var(--green-bg); color: var(--green); border-color: rgba(74,222,128,0.3) !important; box-shadow: 0 0 20px rgba(74,222,128,0.15); }
+        .status-error { background: var(--red-bg); color: var(--red); border-color: rgba(248,113,113,0.3) !important; box-shadow: 0 0 20px rgba(248,113,113,0.15); }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+
+        /* Layout */
+        .container {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            height: calc(100vh - 57px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-right: 1px solid var(--glass-border);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 4px 0 30px rgba(0,0,0,0.15);
+        }
+        .sidebar h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 9px 12px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 13px;
+            font-family: 'Inter', system-ui, sans-serif;
+            outline: none;
+            transition: all 0.25s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .form-group select:focus,
+        .form-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-bg), inset 0 2px 4px rgba(0,0,0,0.2), 0 0 20px rgba(168,85,247,0.1);
+        }
+        .form-group select:hover,
+        .form-group input:hover {
+            border-color: var(--glass-border-hover);
+            background: rgba(255,255,255,0.07);
+        }
+        .form-group select { cursor: pointer; }
+        .form-group select option {
+            background: #1a1030;
+            color: var(--text);
+        }
+        .form-group .hint {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* Ollama status */
+        .ollama-status {
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .ollama-status .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .ollama-connected { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+        .ollama-connected .dot { background: var(--green); box-shadow: 0 0 10px rgba(74,222,128,0.5); }
+        .ollama-disconnected { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+        .ollama-disconnected .dot { background: var(--red); box-shadow: 0 0 10px rgba(248,113,113,0.5); }
+        .ollama-checking { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+        .ollama-checking .dot { background: var(--yellow); box-shadow: 0 0 10px rgba(251,191,36,0.5); animation: pulse 1.5s infinite; }
+
+        /* Model cards */
+        .model-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .model-card {
+            padding: 4px 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .model-card:hover {
+            border-color: var(--accent);
+            background: var(--accent-bg);
+            box-shadow: 0 0 15px rgba(168,85,247,0.15);
+            transform: translateY(-1px);
+        }
+        .model-card.active {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 20px rgba(168,85,247,0.2);
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+            margin: 20px 0;
+        }
+
+        /* Main Content */
+        .main {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Input area */
+        .input-area {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.02);
+        }
+        .input-area textarea {
+            width: 100%;
+            height: 80px;
+            padding: 14px;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'Inter', system-ui, sans-serif;
+            resize: vertical;
+            outline: none;
+            transition: all 0.25s ease;
+            line-height: 1.5;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .input-area textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-bg), inset 0 2px 6px rgba(0,0,0,0.2), 0 0 25px rgba(168,85,247,0.1);
+        }
+        .input-area textarea::placeholder { color: var(--text-dim); }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            align-items: center;
+        }
+        .btn {
+            padding: 9px 20px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter', system-ui, sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #a855f7, #7c3aed, #3b82f6);
+            color: white;
+            box-shadow: 0 4px 15px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(168,85,247,0.4), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 30px rgba(168,85,247,0.2);
+        }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.06);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 0 15px rgba(168,85,247,0.1);
+        }
+
+        /* Progress */
+        .progress-bar {
+            height: 3px;
+            background: rgba(255,255,255,0.05);
+            overflow: hidden;
+        }
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #c084fc, #3b82f6);
+            transition: width 0.5s ease;
+            width: 0%;
+            border-radius: 2px;
+            box-shadow: 0 0 12px rgba(168,85,247,0.5);
+        }
+
+        /* Output tabs */
+        .output-area {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .tabs {
+            display: flex;
+            padding: 0 28px;
+            border-bottom: 1px solid var(--glass-border);
+            overflow-x: auto;
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: var(--glass-blur-light);
+            -webkit-backdrop-filter: var(--glass-blur-light);
+        }
+        .tab {
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            letter-spacing: 0.2px;
+            position: relative;
+        }
+        .tab:hover {
+            color: var(--text);
+            background: rgba(255,255,255,0.05);
+        }
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background: var(--accent-bg);
+            box-shadow: 0 2px 15px rgba(168,85,247,0.15);
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 28px;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Log entries */
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 12px;
+            margin-bottom: 2px;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+            animation: fadeIn 0.3s ease;
+            border-radius: 8px;
+            transition: background 0.15s;
+        }
+        .log-entry:hover { background: rgba(255,255,255,0.04); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .log-step {
+            color: var(--accent);
+            font-weight: 600;
+            min-width: 70px;
+            text-shadow: 0 0 10px rgba(168,85,247,0.3);
+        }
+        .log-msg { color: var(--text); }
+        .log-entry.success .log-msg { color: var(--green); text-shadow: 0 0 8px rgba(74,222,128,0.2); }
+        .log-entry.error .log-msg { color: var(--red); text-shadow: 0 0 8px rgba(248,113,113,0.2); }
+
+        /* Code viewer */
+        .code-viewer {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+        .code-header {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.06);
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 0.3px;
+        }
+        .code-body {
+            padding: 16px;
+            font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+            font-size: 12.5px;
+            line-height: 1.7;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* Markdown content */
+        .md-content {
+            line-height: 1.7;
+            font-size: 14px;
+        }
+        .md-content h1, .md-content h2, .md-content h3 {
+            margin: 16px 0 8px;
+            color: var(--text);
+            background: linear-gradient(135deg, #a855f7, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        .md-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+        }
+        .md-content th, .md-content td {
+            padding: 8px 12px;
+            border: 1px solid var(--glass-border);
+            text-align: left;
+            font-size: 13px;
+        }
+        .md-content th {
+            background: rgba(255,255,255,0.06);
+            font-weight: 600;
+        }
+        .md-content ul, .md-content ol {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+        .md-content code {
+            background: rgba(255,255,255,0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .md-content pre {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 14px;
+            overflow-x: auto;
+            margin: 12px 0;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .md-content pre code {
+            background: none;
+            padding: 0;
+            border: none;
+        }
+
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            gap: 12px;
+        }
+        .empty-state .icon { font-size: 40px; opacity: 0.15; }
+        .empty-state p { font-size: 13px; }
+
+        /* JSON viewer */
+        .json-viewer {
+            font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: var(--text);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        /* Presets */
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .preset {
+            padding: 6px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .preset:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-bg);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(168,85,247,0.15);
+        }
+
+        /* Settings modal glass overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000;
+            overflow-y: auto;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        .modal-content {
+            max-width: 700px;
+            margin: 40px auto;
+            background: rgba(20,10,40,0.85);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), var(--glow-purple);
+        }
+
+        /* Settings button in header */
+        .settings-btn {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 6px 14px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(168,85,247,0.15);
+        }
+        /* ===== LIGHT THEME ===== */
+        body.light {
+            --bg: #f0f2f5;
+            --text: #1a1a2e;
+            --text-dim: #6b7280;
+            --accent: #7c3aed;
+            --green: #16a34a;
+            --red: #dc2626;
+            --yellow: #d97706;
+            --blue: #2563eb;
+            background: #f0f2f5;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(37, 99, 235, 0.05) 0%, transparent 50%);
+        }
+        body.light .ambient-orb { opacity: 0.08; }
+
+        body.light .header,
+        body.light .sidebar {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(20px);
+            border-color: rgba(0,0,0,0.08);
+        }
+
+        body.light .glass-panel,
+        body.light .code-viewer,
+        body.light .glass-card,
+        body.light .tab-content {
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(16px);
+            border-color: rgba(0,0,0,0.08);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        body.light .code-header {
+            background: rgba(0,0,0,0.03);
+            border-color: rgba(0,0,0,0.06);
+        }
+        body.light .code-body {
+            color: #1a1a2e;
+        }
+
+        body.light .tabs {
+            background: rgba(255,255,255,0.6);
+            border-color: rgba(0,0,0,0.06);
+        }
+        body.light .tab {
+            color: #6b7280;
+        }
+        body.light .tab:hover {
+            color: #1a1a2e;
+            background: rgba(124,58,237,0.05);
+        }
+        body.light .tab.active {
+            color: #7c3aed;
+            background: rgba(124,58,237,0.08);
+            border-bottom-color: #7c3aed;
+        }
+
+        body.light select,
+        body.light input,
+        body.light textarea {
+            background: rgba(255,255,255,0.8) !important;
+            border-color: rgba(0,0,0,0.12) !important;
+            color: #1a1a2e !important;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+        }
+        body.light select:focus,
+        body.light input:focus,
+        body.light textarea:focus {
+            border-color: rgba(124,58,237,0.4) !important;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.1) !important;
+        }
+        body.light input::placeholder,
+        body.light textarea::placeholder {
+            color: #9ca3af !important;
+        }
+        body.light select option {
+            background: #ffffff;
+            color: #1a1a2e;
+        }
+
+        body.light .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #6366f1, #3b82f6);
+            box-shadow: 0 2px 8px rgba(124,58,237,0.25);
+        }
+        body.light .btn-secondary,
+        body.light .settings-btn {
+            background: rgba(255,255,255,0.8);
+            border-color: rgba(0,0,0,0.12);
+            color: #1a1a2e;
+        }
+        body.light .settings-btn:hover {
+            background: rgba(124,58,237,0.08);
+            border-color: #7c3aed;
+            box-shadow: none;
+        }
+
+        body.light .preset {
+            background: rgba(255,255,255,0.8);
+            border-color: rgba(0,0,0,0.1);
+            color: #6b7280;
+        }
+        body.light .preset:hover {
+            background: rgba(124,58,237,0.08);
+            border-color: #7c3aed;
+            color: #7c3aed;
+        }
+
+        body.light .status-badge {
+            color: #1a1a2e;
+        }
+        body.light .status-idle { background: rgba(0,0,0,0.05); color: #6b7280; }
+        body.light .status-running { background: rgba(37,99,235,0.1); color: #2563eb; }
+        body.light .status-complete { background: rgba(22,163,74,0.1); color: #16a34a; }
+        body.light .status-error { background: rgba(220,38,38,0.1); color: #dc2626; }
+
+        body.light .ollama-status {
+            border-color: rgba(0,0,0,0.08);
+        }
+        body.light .ollama-connected { background: rgba(22,163,74,0.06); }
+        body.light .ollama-disconnected { background: rgba(220,38,38,0.06); }
+
+        body.light .log-entry:hover { background: rgba(0,0,0,0.03); }
+        body.light .log-step { color: #7c3aed; }
+
+        body.light .model-card {
+            background: rgba(255,255,255,0.8);
+            border-color: rgba(0,0,0,0.1);
+        }
+        body.light .model-card:hover,
+        body.light .model-card.active {
+            background: rgba(124,58,237,0.08);
+            border-color: #7c3aed;
+            color: #7c3aed;
+        }
+
+        body.light .progress-bar { background: rgba(0,0,0,0.06); }
+
+        body.light .md-content th { background: rgba(0,0,0,0.03); }
+        body.light .md-content td,
+        body.light .md-content th { border-color: rgba(0,0,0,0.08); }
+        body.light .md-content code { background: rgba(0,0,0,0.05); color: #7c3aed; }
+
+        body.light h1, body.light h2, body.light h3 { color: #1a1a2e; }
+        body.light .sidebar h2 { color: #6b7280; }
+        body.light .header h1 {
+            background: linear-gradient(135deg, #7c3aed, #6366f1, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        body.light .divider { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent); }
+
+        body.light .empty-state { color: #9ca3af; }
+        body.light .empty-state .icon { opacity: 0.15; }
+
+        body.light ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+        body.light ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+
+        /* Settings modal light */
+        body.light #settingsModal > div { background: rgba(0,0,0,0.4); }
+        body.light #settingsModal > div > div {
+            background: #ffffff;
+            backdrop-filter: none;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+
+        /* Light theme - solid backgrounds, proper contrast */
+        body.light .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            backdrop-filter: none;
+        }
+        body.light .sidebar {
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            backdrop-filter: none;
+        }
+        body.light .glass-panel,
+        body.light .code-viewer,
+        body.light .tab-content {
+            background: #ffffff;
+            backdrop-filter: none;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        body.light .glass-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            backdrop-filter: none;
+        }
+        body.light .code-header {
+            background: #f3f4f6;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+        }
+        body.light .code-body {
+            background: #fafafa;
+            color: #1f2937;
+        }
+        body.light .tabs {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            backdrop-filter: none;
+        }
+        body.light select,
+        body.light input,
+        body.light textarea {
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #1f2937 !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        }
+        body.light select:focus,
+        body.light input:focus,
+        body.light textarea:focus {
+            border-color: #7c3aed !important;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.12) !important;
+        }
+        body.light .btn-secondary,
+        body.light .settings-btn {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+        }
+        body.light .settings-btn:hover {
+            background: #f3f4f6;
+            border-color: #7c3aed;
+            color: #7c3aed;
+            box-shadow: none;
+        }
+        body.light .preset {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+        }
+        body.light .preset:hover {
+            background: #f5f3ff;
+            border-color: #7c3aed;
+            color: #7c3aed;
+        }
+        body.light .input-area {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        body.light .progress-bar {
+            background: #e5e7eb;
+        }
+        body.light .log-entry:hover {
+            background: #f9fafb;
+        }
+        body.light .ollama-status {
+            border: 1px solid #e5e7eb;
+        }
+        body.light .ollama-connected { background: #f0fdf4; border-color: #bbf7d0; }
+        body.light .ollama-disconnected { background: #fef2f2; border-color: #fecaca; }
+        body.light .ollama-checking { background: #fffbeb; border-color: #fde68a; }
+        body.light .model-card {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+        }
+        body.light .model-card:hover,
+        body.light .model-card.active {
+            background: #f5f3ff;
+            border-color: #7c3aed;
+            color: #7c3aed;
+        }
+        body.light .divider {
+            background: #e5e7eb;
+        }
+        body.light .empty-state {
+            color: #9ca3af;
+        }
+        body.light .form-group label {
+            color: #374151;
+        }
+        body.light .form-group .hint {
+            color: #9ca3af;
+        }
+        body.light .form-group .hint a {
+            color: #7c3aed;
+        }
+        body.light .md-content table {
+            border: 1px solid #e5e7eb;
+        }
+        body.light .md-content th {
+            background: #f9fafb;
+            border-color: #e5e7eb;
+        }
+        body.light .md-content td {
+            border-color: #e5e7eb;
+        }
+        body.light .md-content code {
+            background: #f3f4f6;
+            color: #7c3aed;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <h2 style="font-size:18px;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent">IaCraft — API Keys & Settings</h2>
+            <button onclick="closeSettings()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:16px;cursor:pointer;padding:4px 10px;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">X</button>
+        </div>
+        <p style="color:var(--text-dim);font-size:13px;margin-bottom:20px">
+            Paste API keys below and click Save. Keys are stored in your local .env file. Never shared externally.
+        </p>
+
+        <div id="keysList"></div>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08)">
+            <h3 style="font-size:14px;margin-bottom:12px;color:var(--text-dim)">Ollama Server</h3>
+            <div style="display:flex;gap:8px">
+                <input type="text" id="settingsOllamaUrl" value="" placeholder="http://192.168.50.73:11434" style="flex:1;padding:10px 12px;background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius);color:var(--text);font-size:14px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.2)">
+                <button onclick="saveApiKey('OLLAMA_BASE_URL', document.getElementById('settingsOllamaUrl').value); this.textContent='Saved!'; setTimeout(()=>this.textContent='Save',1500)" class="btn btn-primary" style="padding:10px 20px">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+    <div style="display:flex;align-items:center;gap:10px"><img src="/static/logo.svg" width="28" height="28"><h1>IaCraft</h1></div>
+    <div style="display:flex;gap:10px;align-items:center">
+        <button onclick="toggleTheme()" class="settings-btn" id="themeBtn" title="Toggle theme">Light</button>
+        <button onclick="openSettings()" class="settings-btn">Settings</button>
+        <span id="globalStatus" class="status-badge status-idle">Idle</span>
+        <a href="/api/logout" class="settings-btn" style="text-decoration:none">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Sidebar: Settings -->
+    <div class="sidebar">
+        <h2>LLM Provider</h2>
+
+        <div class="form-group">
+            <label>Provider</label>
+            <select id="provider" onchange="onProviderChange()">
+                {% for p in providers %}
+                <option value="{{ p }}" {{ 'selected' if p == 'groq' else '' }}>{{ provider_names.get(p, p) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Ollama Status -->
+        <div id="ollamaSection">
+            <div id="ollamaStatus" class="ollama-status ollama-checking">
+                <div class="dot"></div>
+                <span>Checking Ollama...</span>
+            </div>
+
+            <div class="form-group">
+                <label>Ollama URL</label>
+                <input type="text" id="ollamaUrl" value="{{ default_ollama_url }}" onchange="checkOllama()">
+            </div>
+
+            <div class="form-group">
+                <label>Model</label>
+                <select id="ollamaModel">
+                    <option value="qwen2.5-coder:3b">qwen2.5-coder:3b (~2GB)</option>
+                    <option value="qwen2.5-coder:1.5b">qwen2.5-coder:1.5b (~1GB)</option>
+                    <option value="qwen2.5-coder:7b">qwen2.5-coder:7b (~4.5GB)</option>
+                    <option value="phi3:mini">phi3:mini (~2.3GB)</option>
+                    <option value="llama3:8b">llama3:8b (~4.7GB)</option>
+                    <option value="codellama:7b">codellama:7b (~3.8GB)</option>
+                    <option value="deepseek-coder:6.7b">deepseek-coder:6.7b (~3.8GB)</option>
+                </select>
+                <div class="hint">Available models from Ollama:</div>
+                <div id="availableModels" class="model-cards"></div>
+            </div>
+        </div>
+
+        <!-- Groq Section -->
+        <div id="groqSection" style="display:none">
+            <div class="ollama-status ollama-connected" style="background:rgba(244,100,54,0.08);border-color:rgba(244,100,54,0.2)">
+                <div class="dot" style="background:#f46436;box-shadow:0 0 10px rgba(244,100,54,0.5)"></div>
+                <span>FREE — ultra-fast (30 req/min)</span>
+            </div>
+            <div class="form-group">
+                <label>Model</label>
+                <select id="groqModel">
+                    <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B (best quality)</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B (fastest)</option>
+                    <option value="mixtral-8x7b-32768">Mixtral 8x7B (32K context)</option>
+                    <option value="gemma2-9b-it">Gemma 2 9B</option>
+                </select>
+                <div class="hint">FREE: <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">Get key</a></div>
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="groqKey" placeholder="gsk_..." onchange="saveApiKey('GROQ_API_KEY', this.value)">
+                <div class="hint" id="groqKeyStatus"></div>
+            </div>
+        </div>
+
+        <!-- Gemini Section -->
+        <div id="geminiSection" style="display:none">
+            <div class="ollama-status ollama-connected" style="background:rgba(66,133,244,0.08);border-color:rgba(66,133,244,0.2)">
+                <div class="dot" style="background:#4285f4;box-shadow:0 0 10px rgba(66,133,244,0.5)"></div>
+                <span>Free tier: 15 req/min</span>
+            </div>
+            <div class="form-group">
+                <label>Model</label>
+                <select id="geminiModel">
+                    <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash (FREE)</option>
+                    <option value="gemini-2.5-flash-preview-05-20">Gemini 2.5 Flash Preview</option>
+                </select>
+                <div class="hint">FREE: <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">Get key</a></div>
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="geminiKey" placeholder="AIza..." onchange="saveApiKey('GEMINI_API_KEY', this.value)">
+                <div class="hint" id="geminiKeyStatus"></div>
+            </div>
+        </div>
+
+        <!-- OpenAI Section -->
+        <div id="openaiSection" style="display:none">
+            <div class="form-group">
+                <label>Model</label>
+                <select id="openaiModel">
+                    <option value="gpt-4o-mini" selected>GPT-4o Mini (~$0.03/run)</option>
+                    <option value="gpt-4o">GPT-4o (~$0.30/run)</option>
+                    <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="openaiKey" placeholder="sk-..." onchange="saveApiKey('OPENAI_API_KEY', this.value)">
+                <div class="hint" id="openaiKeyStatus"><a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--accent)">Get key</a></div>
+            </div>
+        </div>
+
+        <!-- Claude Section -->
+        <div id="claudeSection" style="display:none">
+            <div class="form-group">
+                <label>Model</label>
+                <select id="claudeModel">
+                    <option value="claude-sonnet-4-6-20250514">Claude Sonnet 4.6</option>
+                    <option value="claude-opus-4-6-20250514">Claude Opus 4.6</option>
+                    <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="claudeKey" placeholder="sk-ant-..." onchange="saveApiKey('ANTHROPIC_API_KEY', this.value)">
+                <div class="hint" id="claudeKeyStatus"><a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent)">Get key</a></div>
+            </div>
+        </div>
+
+        <!-- AWS Bedrock Section -->
+        <div id="bedrockSection" style="display:none">
+            <div class="form-group">
+                <label>Model</label>
+                <select id="bedrockModel">
+                    <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Claude 3.5 Haiku (~$0.01/run)</option>
+                    <option value="us.anthropic.claude-3-5-sonnet-20241022-v2:0">Claude 3.5 Sonnet</option>
+                    <option value="us.meta.llama3-3-70b-instruct-v1:0">Llama 3.3 70B (~$0.003/run)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>AWS Region</label>
+                <input type="text" id="bedrockRegion" placeholder="us-east-1" value="us-east-1" onchange="saveApiKey('AWS_REGION', this.value)">
+                <div class="hint">Requires <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:12px">aws configure</code> with access keys</div>
+            </div>
+        </div>
+
+        <!-- Azure OpenAI Section -->
+        <div id="azure_openaiSection" style="display:none">
+            <div class="form-group">
+                <label>Model</label>
+                <select id="azure_openaiModel">
+                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Endpoint</label>
+                <input type="text" id="azureEndpoint" placeholder="https://your-resource.openai.azure.com/" onchange="saveApiKey('AZURE_OPENAI_ENDPOINT', this.value)">
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="azure_openaiKey" placeholder="Azure key..." onchange="saveApiKey('AZURE_OPENAI_API_KEY', this.value)">
+                <div class="hint" id="azure_openaiKeyStatus"><a href="https://portal.azure.com" target="_blank" style="color:var(--accent)">Azure Portal</a></div>
+            </div>
+        </div>
+
+        <!-- Mistral Section -->
+        <div id="mistralSection" style="display:none">
+            <div class="form-group">
+                <label>Model</label>
+                <select id="mistralModel">
+                    <option value="mistral-large-latest">Mistral Large (~$0.01/run)</option>
+                    <option value="codestral-latest">Codestral (code-optimized)</option>
+                    <option value="mistral-small-latest">Mistral Small (~$0.003/run)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="mistralKey" placeholder="Mistral key..." onchange="saveApiKey('MISTRAL_API_KEY', this.value)">
+                <div class="hint" id="mistralKeyStatus">Free tier: <a href="https://console.mistral.ai/api-keys" target="_blank" style="color:var(--accent)">Get key</a></div>
+            </div>
+        </div>
+
+        <!-- DeepSeek Section -->
+        <div id="deepseekSection" style="display:none">
+            <div class="form-group">
+                <label>Model</label>
+                <select id="deepseekModel">
+                    <option value="deepseek-coder">DeepSeek Coder (~$0.001/run)</option>
+                    <option value="deepseek-chat">DeepSeek Chat</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="deepseekKey" placeholder="DeepSeek key..." onchange="saveApiKey('DEEPSEEK_API_KEY', this.value)">
+                <div class="hint" id="deepseekKeyStatus"><a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:var(--accent)">Get key</a></div>
+            </div>
+        </div>
+
+        <!-- Cohere Section -->
+        <div id="cohereSection" style="display:none">
+            <div class="form-group">
+                <label>Model</label>
+                <select id="cohereModel">
+                    <option value="command-r-plus">Command R+ (best)</option>
+                    <option value="command-r">Command R (faster)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="cohereKey" placeholder="Cohere key..." onchange="saveApiKey('COHERE_API_KEY', this.value)">
+                <div class="hint" id="cohereKeyStatus">Free trial: <a href="https://dashboard.cohere.com/api-keys" target="_blank" style="color:var(--accent)">Get key</a></div>
+            </div>
+        </div>
+
+        <!-- Together AI Section -->
+        <div id="togetherSection" style="display:none">
+            <div class="form-group">
+                <label>Model</label>
+                <select id="togetherModel">
+                    <option value="Qwen/Qwen2.5-Coder-32B-Instruct">Qwen 2.5 Coder 32B</option>
+                    <option value="meta-llama/Llama-3.3-70B-Instruct-Turbo">Llama 3.3 70B Turbo</option>
+                    <option value="deepseek-ai/DeepSeek-V3">DeepSeek V3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="togetherKey" placeholder="Together key..." onchange="saveApiKey('TOGETHER_API_KEY', this.value)">
+                <div class="hint" id="togetherKeyStatus">$25 free: <a href="https://api.together.ai/settings/api-keys" target="_blank" style="color:var(--accent)">Get key</a></div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>Infrastructure</h2>
+
+        <div class="form-group">
+            <label>Cloud Provider</label>
+            <select id="cloud" onchange="onCloudChange()">
+                {% for c in clouds %}
+                <option value="{{ c }}">{{ c | upper }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>IaC Tool</label>
+            <select id="iacTool">
+                {% for t in iac_tools %}
+                <option value="{{ t }}">{{ t | capitalize }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Region</label>
+            <input type="text" id="region" placeholder="Auto-detect based on cloud">
+        </div>
+
+        <div class="form-group">
+            <label>Output Directory</label>
+            <input type="text" id="outputDir" value="output">
+        </div>
+
+        <div class="divider"></div>
+        <h2>Documentation</h2>
+
+        <div class="form-group">
+            <label>Guide Level</label>
+            <select id="docLevel">
+                <option value="quick">Quick Start (2-3 pages)</option>
+                <option value="standard" selected>Standard (8-10 pages)</option>
+                <option value="enterprise">Enterprise (20+ pages)</option>
+                <option value="compliance">Compliance & Audit (15+ pages)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+        <!-- Input -->
+        <div class="input-area">
+            <textarea id="messageInput" placeholder="Describe your infrastructure in plain English...&#10;&#10;Example: Deploy a 3-tier web app with PostgreSQL, Redis caching, auto-scaling, and CDN on AWS"></textarea>
+            <div class="presets" id="presets">
+                <span class="preset" onclick="setPreset('3-tier web app with PostgreSQL, Redis, auto-scaling and CDN')">3-Tier Web App</span>
+                <span class="preset" onclick="setPreset('Microservices platform on Kubernetes with CI/CD pipeline and monitoring')">Microservices + K8s</span>
+                <span class="preset" onclick="setPreset('Serverless API with NoSQL database, authentication, and CDN')">Serverless API</span>
+                <span class="preset" onclick="setPreset('Data pipeline with object storage, ETL processing, and data warehouse')">Data Pipeline</span>
+                <span class="preset" onclick="setPreset('AI/ML inference platform with GPU compute, model storage, and API gateway')">ML Platform</span>
+            </div>
+            <div class="btn-row">
+                <button id="btnGenerate" class="btn btn-primary" onclick="startGeneration()">Generate IaC</button>
+                <button id="btnStop" class="btn btn-secondary" style="display:none" onclick="location.reload()">Stop</button>
+                <a id="btnDownload" href="/api/download" class="btn btn-secondary" style="display:none;text-decoration:none">Download ZIP</a>
+                <span id="timerDisplay" style="font-size:13px; color:var(--text-dim);"></span>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div id="progressFill" class="fill"></div>
+        </div>
+
+        <!-- Output -->
+        <div class="output-area">
+            <div class="tabs">
+                <div class="tab active" data-tab="logs" onclick="switchTab('logs')">Pipeline Logs</div>
+                <div class="tab" data-tab="architecture" onclick="switchTab('architecture')">Architecture</div>
+                <div class="tab" data-tab="iac" onclick="switchTab('iac')">IaC Code</div>
+                <div class="tab" data-tab="diagram" onclick="switchTab('diagram')">Diagram</div>
+                <div class="tab" data-tab="security" onclick="switchTab('security')">Security</div>
+                <div class="tab" data-tab="compliance" onclick="switchTab('compliance')">Compliance</div>
+                <div class="tab" data-tab="cost" onclick="switchTab('cost')">Cost</div>
+                <div class="tab" data-tab="validation" onclick="switchTab('validation')">Validation</div>
+                <div class="tab" data-tab="simulator" onclick="switchTab('simulator')" style="color:var(--accent);font-weight:600">Simulator</div>
+                <div class="tab" data-tab="guide" onclick="switchTab('guide')" style="color:var(--orange, #fb923c);font-weight:600">Deployment Guide</div>
+                <div class="tab" data-tab="compare" onclick="switchTab('compare')" style="color:var(--green);font-weight:600">Compare Clouds</div>
+            </div>
+
+            <div class="tab-content">
+                <!-- Logs -->
+                <div id="panel-logs" class="tab-panel active">
+                    <div id="logContainer" class="empty-state">
+                        <div class="icon">&#9881;</div>
+                        <p>Enter a message and click "Generate IaC" to start the pipeline</p>
+                    </div>
+                </div>
+
+                <!-- Architecture JSON -->
+                <div id="panel-architecture" class="tab-panel">
+                    <div id="architectureContent" class="empty-state">
+                        <p>Architecture will appear after Step 3</p>
+                    </div>
+                </div>
+
+                <!-- IaC Code -->
+                <div id="panel-iac" class="tab-panel">
+                    <div id="iacContent" class="empty-state">
+                        <p>IaC code will appear after Step 5</p>
+                    </div>
+                </div>
+
+                <!-- Diagram -->
+                <div id="panel-diagram" class="tab-panel">
+                    <div id="diagramContent" class="empty-state">
+                        <p>Diagram will appear after Step 6</p>
+                    </div>
+                </div>
+
+                <!-- Security -->
+                <div id="panel-security" class="tab-panel">
+                    <div id="securityContent" class="empty-state">
+                        <p>Security controls will appear after Step 7</p>
+                    </div>
+                </div>
+
+                <!-- Compliance -->
+                <div id="panel-compliance" class="tab-panel">
+                    <div id="complianceContent" class="empty-state">
+                        <p>Compliance mapping will appear after Step 8</p>
+                    </div>
+                </div>
+
+                <!-- Cost -->
+                <div id="panel-cost" class="tab-panel">
+                    <div id="costContent" class="empty-state">
+                        <p>Cost estimate will appear after Step 9</p>
+                    </div>
+                </div>
+
+                <!-- Validation -->
+                <div id="panel-validation" class="tab-panel">
+                    <div id="validationContent" class="empty-state">
+                        <p>Validation plan will appear after Step 10</p>
+                    </div>
+                </div>
+
+                <!-- Simulator -->
+                <div id="panel-simulator" class="tab-panel">
+                    <div style="margin-bottom:16px">
+                        <h3 style="margin-bottom:8px;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline-block">Code Simulator</h3>
+                        <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px">
+                            Validates generated Terraform code using <strong>terraform fmt</strong>, <strong>terraform validate</strong>, and <strong>checkov</strong>.
+                            If errors are found, sends them to the LLM for auto-fix, then re-validates. Max 3 rounds.
+                        </p>
+                        <button id="btnSimulate" class="btn btn-primary" onclick="startSimulator()" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 4px 15px rgba(74,222,128,0.3)">
+                            Run Simulator
+                        </button>
+                        <span id="simStatus" style="font-size:13px;color:var(--text-dim);margin-left:12px"></span>
+                    </div>
+                    <div id="simResults">
+                        <div class="empty-state" style="height:auto;padding:40px">
+                            <div class="icon">&#9881;</div>
+                            <p>Generate IaC code first, then run the simulator to validate and auto-fix</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compare Clouds -->
+                <!-- Deployment Guide -->
+                <div id="panel-guide" class="tab-panel">
+                    <div id="guideContent" class="empty-state">
+                        <div class="icon">&#128214;</div>
+                        <p>Enterprise deployment guide will be generated after the pipeline completes (Step 12)</p>
+                    </div>
+                </div>
+
+                <div id="panel-compare" class="tab-panel">
+                    <div style="margin-bottom:16px">
+                        <h3 style="margin-bottom:8px;background:linear-gradient(135deg,#4ade80,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline-block">Multi-Cloud Comparison</h3>
+                        <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px">
+                            Generates infrastructure for <strong>AWS</strong>, <strong>Azure</strong>, and <strong>GCP</strong> from the same requirement.
+                            Compares services, cost, and security side-by-side.
+                        </p>
+                        <button id="btnCompare" class="btn btn-primary" onclick="startCompare()" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 4px 15px rgba(74,222,128,0.3)">
+                            Compare All Clouds
+                        </button>
+                        <span id="compareStatus" style="font-size:13px;color:var(--text-dim);margin-left:12px"></span>
+                    </div>
+
+                    <!-- Cloud cards -->
+                    <div id="compareResults">
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+                            <div class="code-viewer" id="card-aws">
+                                <div class="code-header" style="background:linear-gradient(135deg,#ff9900,#ffb84d);color:#000"><strong>AWS</strong></div>
+                                <div class="code-body" style="min-height:100px;text-align:center;color:var(--text-dim)">Click "Compare All Clouds" to start</div>
+                            </div>
+                            <div class="code-viewer" id="card-azure">
+                                <div class="code-header" style="background:linear-gradient(135deg,#0078d4,#40a0ff);color:#fff"><strong>Azure</strong></div>
+                                <div class="code-body" style="min-height:100px;text-align:center;color:var(--text-dim)">Click "Compare All Clouds" to start</div>
+                            </div>
+                            <div class="code-viewer" id="card-gcp">
+                                <div class="code-header" style="background:linear-gradient(135deg,#4285f4,#6fa8ff);color:#fff"><strong>GCP</strong></div>
+                                <div class="code-body" style="min-height:100px;text-align:center;color:var(--text-dim)">Click "Compare All Clouds" to start</div>
+                            </div>
+                        </div>
+
+                        <!-- Comparison report -->
+                        <div id="compareReport"></div>
+
+                        <!-- Live logs -->
+                        <div id="compareLogs" style="margin-top:16px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---- State ----
+    let isRunning = false;
+    let timerInterval = null;
+    let startTime = null;
+
+    const defaultRegions = {{ default_regions | tojson }};
+
+    // ---- Provider Switching ----
+    function onProviderChange() {
+        const provider = document.getElementById('provider').value;
+        const allSections = ['groq','gemini','openai','claude','bedrock','azure_openai','mistral','deepseek','cohere','together','ollama'];
+        allSections.forEach(p => {
+            const el = document.getElementById(p + 'Section');
+            if (el) el.style.display = provider === p ? 'block' : 'none';
+        });
+        if (provider === 'ollama') checkOllama();
+    }
+
+    function onCloudChange() {
+        const cloud = document.getElementById('cloud').value;
+        document.getElementById('region').placeholder = defaultRegions[cloud] + ' (default)';
+    }
+
+    // ---- Ollama Status ----
+    async function checkOllama() {
+        const url = document.getElementById('ollamaUrl').value;
+        const statusEl = document.getElementById('ollamaStatus');
+        const modelsEl = document.getElementById('availableModels');
+        statusEl.className = 'ollama-status ollama-checking';
+        statusEl.innerHTML = '<div class="dot"></div><span>Checking Ollama...</span>';
+        try {
+            const resp = await fetch(`/api/ollama/status?url=${encodeURIComponent(url)}`);
+            const data = await resp.json();
+            if (data.status === 'connected') {
+                statusEl.className = 'ollama-status ollama-connected';
+                statusEl.innerHTML = `<div class="dot"></div><span>Connected — ${data.models.length} model(s)</span>`;
+                modelsEl.innerHTML = '';
+                data.models.forEach(m => {
+                    const card = document.createElement('span');
+                    card.className = 'model-card';
+                    card.textContent = m;
+                    card.onclick = () => selectOllamaModel(m);
+                    modelsEl.appendChild(card);
+                });
+            } else {
+                statusEl.className = 'ollama-status ollama-disconnected';
+                statusEl.innerHTML = '<div class="dot"></div><span>Ollama not reachable</span>';
+                modelsEl.innerHTML = '<span style="font-size:12px;color:var(--text-dim)">Start Ollama with: ollama serve</span>';
+            }
+        } catch (e) {
+            statusEl.className = 'ollama-status ollama-disconnected';
+            statusEl.innerHTML = '<div class="dot"></div><span>Connection failed</span>';
+        }
+    }
+
+    function selectOllamaModel(name) {
+        const select = document.getElementById('ollamaModel');
+        let found = false;
+        for (let opt of select.options) { if (opt.value === name) { opt.selected = true; found = true; break; } }
+        if (!found) { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; opt.selected = true; select.appendChild(opt); }
+        document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function setPreset(text) { document.getElementById('messageInput').value = text; }
+
+    function switchTab(name) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+        document.getElementById(`panel-${name}`).classList.add('active');
+    }
+
+    function startTimer() {
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const m = Math.floor(elapsed / 60);
+            const s = elapsed % 60;
+            document.getElementById('timerDisplay').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+    function stopTimer() { clearInterval(timerInterval); }
+
+    async function startGeneration() {
+        const message = document.getElementById('messageInput').value.trim();
+        if (!message) return;
+        const provider = document.getElementById('provider').value;
+        const modelMap = {
+            'groq': 'groqModel', 'gemini': 'geminiModel', 'openai': 'openaiModel',
+            'claude': 'claudeModel', 'bedrock': 'bedrockModel', 'azure_openai': 'azure_openaiModel',
+            'mistral': 'mistralModel', 'deepseek': 'deepseekModel', 'cohere': 'cohereModel',
+            'together': 'togetherModel', 'ollama': 'ollamaModel',
+        };
+        const model = document.getElementById(modelMap[provider]).value;
+        const payload = {
+            message, provider, model,
+            cloud: document.getElementById('cloud').value,
+            iac_tool: document.getElementById('iacTool').value,
+            region: document.getElementById('region').value || null,
+            output_dir: document.getElementById('outputDir').value || 'output',
+            doc_level: document.getElementById('docLevel').value,
+            ollama_url: provider === 'ollama' ? document.getElementById('ollamaUrl').value : null,
+        };
+        isRunning = true;
+        document.getElementById('btnGenerate').disabled = true;
+        document.getElementById('btnStop').style.display = 'inline-block';
+        document.getElementById('logContainer').innerHTML = '';
+        document.getElementById('logContainer').className = '';
+        document.getElementById('progressFill').style.width = '0%';
+        setGlobalStatus('running', 'Running...');
+        startTimer();
+        ['architecture','iac','diagram','security','compliance','cost','validation'].forEach(p => {
+            document.getElementById(`${p}Content`).innerHTML = '<div class="empty-state"><p>Waiting...</p></div>';
+        });
+        try {
+            const resp = await fetch('/api/generate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            if (!resp.ok) { const err = await resp.json(); throw new Error(err.error || 'Failed to start pipeline'); }
+            listenProgress();
+        } catch (e) { addLog(-1, `Error: ${e.message}`, 'error'); setGlobalStatus('error', 'Error'); finishGeneration(); }
+    }
+
+    function listenProgress() {
+        const evtSource = new EventSource('/api/progress');
+        evtSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'error') { addLog(-1, data.message, 'error'); setGlobalStatus('error', 'Error'); evtSource.close(); finishGeneration(); return; }
+            if (data.type === 'done') { addLog(12, 'Pipeline complete!', 'success'); document.getElementById('progressFill').style.width = '100%'; setGlobalStatus('complete', 'Complete'); evtSource.close(); finishGeneration(); loadResults(); return; }
+            addLog(data.step, data.message);
+            document.getElementById('progressFill').style.width = Math.min(100, Math.round((data.step / 11) * 100)) + '%';
+        };
+        evtSource.onerror = function() {
+            evtSource.close();
+            setTimeout(async () => { const resp = await fetch('/api/results'); const data = await resp.json(); if (data.status === 'complete') { setGlobalStatus('complete', 'Complete'); loadResults(); } finishGeneration(); }, 1000);
+        };
+    }
+
+    function finishGeneration() {
+        isRunning = false;
+        document.getElementById('btnGenerate').disabled = false;
+        document.getElementById('btnStop').style.display = 'none';
+        document.getElementById('btnDownload').style.display = 'inline-block';
+        stopTimer();
+    }
+
+    function addLog(step, message, type = '') {
+        const container = document.getElementById('logContainer');
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        const stepLabel = step >= 0 && step <= 11 ? `Step ${step}/11` : (step === 12 ? 'Done' : 'Error');
+        entry.innerHTML = `<span class="log-step">${stepLabel}</span><span class="log-msg">${escapeHtml(message)}</span>`;
+        container.appendChild(entry);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function setGlobalStatus(cls, text) {
+        const el = document.getElementById('globalStatus');
+        el.className = `status-badge status-${cls}`;
+        el.textContent = text;
+    }
+
+    async function loadResults() {
+        try {
+            const resp = await fetch('/api/results');
+            const data = await resp.json();
+            if (data.status !== 'complete') return;
+            const r = data.results;
+            if (r.architecture) {
+                document.getElementById('architectureContent').innerHTML =
+                    `<div class="code-viewer"><div class="code-header">architecture.json</div><div class="code-body json-viewer">${escapeHtml(JSON.stringify(r.architecture, null, 2))}</div></div>` +
+                    (r.mapping ? `<div class="code-viewer"><div class="code-header">cloud-mapping.json</div><div class="code-body json-viewer">${escapeHtml(JSON.stringify(r.mapping, null, 2))}</div></div>` : '');
+            }
+            if (r.iac_files && r.iac_files.length > 0) {
+                let html = '';
+                for (const filepath of r.iac_files) {
+                    const name = filepath.split(/[/\\]/).pop();
+                    try { const fresp = await fetch(`/api/files/terraform/${name}`); const fdata = await fresp.json();
+                        if (fdata.content) { html += `<div class="code-viewer"><div class="code-header"><span>${name}</span><button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="copyCode(this)">Copy</button></div><div class="code-body">${escapeHtml(fdata.content)}</div></div>`; }
+                    } catch(e) {}
+                }
+                if (html) document.getElementById('iacContent').innerHTML = html;
+            }
+            if (r.diagram) {
+                let mermaidCode = r.diagram.trim();
+                if (mermaidCode.includes('```mermaid')) { mermaidCode = mermaidCode.split('```mermaid')[1].split('```')[0].trim(); }
+                else if (mermaidCode.includes('```')) { mermaidCode = mermaidCode.split('```')[1].split('```')[0].trim(); }
+                mermaidCode = mermaidCode.replace(/\|>/g, '|').replace(/\(\(/g, '[').replace(/\)\)/g, ']').replace(/-->\|([^|]*)\| /g, '-->|$1| ').replace(/[""]/g, '"');
+                const diagramId = 'mermaid-' + Date.now();
+                document.getElementById('diagramContent').innerHTML =
+                    `<div class="code-viewer"><div class="code-header"><span>Architecture Diagram</span><button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="copyCode(this)">Copy</button></div><div class="code-body"><div id="${diagramId}"></div></div></div>` +
+                    `<div class="code-viewer" style="margin-top:16px"><div class="code-header">Raw Mermaid</div><div class="code-body">${escapeHtml(mermaidCode)}</div></div>`;
+                if (window.mermaid) { try { mermaid.render(diagramId+'-svg', mermaidCode).then(r => { document.getElementById(diagramId).innerHTML = r.svg; }).catch(() => { document.getElementById(diagramId).innerHTML = '<div style="color:var(--yellow);padding:12px;">Preview unavailable. Raw code below.</div>'; }); } catch(e) { document.getElementById(diagramId).innerHTML = '<div style="color:var(--yellow);padding:12px;">Preview unavailable.</div>'; } }
+            }
+            if (r.security) document.getElementById('securityContent').innerHTML = `<div class="md-content">${simpleMarkdown(r.security)}</div>`;
+            if (r.compliance) document.getElementById('complianceContent').innerHTML = `<div class="md-content">${simpleMarkdown(r.compliance)}</div>`;
+            if (r.cost) document.getElementById('costContent').innerHTML = `<div class="md-content">${simpleMarkdown(r.cost)}</div>`;
+            if (r.validation) document.getElementById('validationContent').innerHTML = `<div class="md-content">${simpleMarkdown(r.validation)}</div>`;
+            if (r.deployment_guide) document.getElementById('guideContent').innerHTML = `<div class="md-content" style="max-width:900px">${simpleMarkdown(r.deployment_guide)}</div>`;
+        } catch (e) { console.error('Failed to load results:', e); }
+    }
+
+    function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+    function copyCode(btn) { const code = btn.closest('.code-viewer').querySelector('.code-body').textContent; navigator.clipboard.writeText(code); btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500); }
+    function simpleMarkdown(text) {
+        return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/^### (.*$)/gm, '<h3>$1</h3>').replace(/^## (.*$)/gm, '<h2>$1</h2>').replace(/^# (.*$)/gm, '<h1>$1</h1>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/^\- (.*$)/gm, '<li>$1</li>').replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+            .replace(/\|(.+)\|/g, function(match) { const cells = match.split('|').filter(c => c.trim()); if (cells.every(c => c.trim().match(/^-+$/))) return ''; const tag = match.includes('---') ? 'th' : 'td'; return '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>'; })
+            .replace(/(<tr>.*<\/tr>)/gs, '<table>$1</table>').replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+    }
+
+    let simPolling = null;
+    async function startSimulator() {
+        const provider = document.getElementById('provider').value;
+        const modelMap = { 'groq': 'groqModel', 'gemini': 'geminiModel', 'openai': 'openaiModel', 'claude': 'claudeModel', 'bedrock': 'bedrockModel', 'azure_openai': 'azure_openaiModel', 'mistral': 'mistralModel', 'deepseek': 'deepseekModel', 'cohere': 'cohereModel', 'together': 'togetherModel', 'ollama': 'ollamaModel' };
+        const model = document.getElementById(modelMap[provider]).value;
+        document.getElementById('btnSimulate').disabled = true;
+        document.getElementById('simStatus').textContent = 'Starting...';
+        document.getElementById('simResults').innerHTML = '';
+        try {
+            const resp = await fetch('/api/simulate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ output_dir: document.getElementById('outputDir').value || 'output', provider, model, ollama_url: provider === 'ollama' ? document.getElementById('ollamaUrl').value : null }) });
+            const data = await resp.json();
+            if (data.error) { document.getElementById('simStatus').textContent = 'Error: ' + data.error; document.getElementById('btnSimulate').disabled = false; return; }
+            simPolling = setInterval(pollSimulator, 2000);
+        } catch(e) { document.getElementById('simStatus').textContent = 'Error: ' + e.message; document.getElementById('btnSimulate').disabled = false; }
+    }
+
+    async function pollSimulator() {
+        try {
+            const resp = await fetch('/api/simulate/status'); const data = await resp.json();
+            let html = '';
+            data.logs.forEach(log => { const isPass = log.includes('PASS'); const isFail = log.includes('FAIL') || log.includes('error'); const cls = isPass ? 'success' : (isFail ? 'error' : ''); html += `<div class="log-entry ${cls}"><span class="log-msg">${escapeHtml(log)}</span></div>`; });
+            if (!data.running) {
+                clearInterval(simPolling); document.getElementById('btnSimulate').disabled = false;
+                if (data.error) { document.getElementById('simStatus').textContent = 'Error'; html += `<div class="log-entry error"><span class="log-msg">Error: ${escapeHtml(data.error)}</span></div>`; }
+                else if (data.report) {
+                    const r = data.report; const statusText = r.final_passed ? 'ALL PASSED' : 'ISSUES REMAINING'; const statusColor = r.final_passed ? 'var(--green)' : 'var(--red)';
+                    document.getElementById('simStatus').innerHTML = `<span style="color:${statusColor};font-weight:600">${statusText}</span> — ${r.total_errors_found} found, ${r.total_errors_fixed} fixed, ${r.rounds.length} round(s)`;
+                    html += '<div style="margin-top:16px">';
+                    r.rounds.forEach(rd => { html += `<div class="code-viewer" style="margin-bottom:12px"><div class="code-header">Round ${rd.round}</div><div class="code-body">`; rd.results.forEach(res => { const icon = res.passed ? '<span style="color:var(--green)">PASS</span>' : '<span style="color:var(--red)">FAIL</span>'; html += `<div style="margin-bottom:8px"><strong>${res.tool}</strong>: ${icon}`; res.errors.forEach(e => { html += `<div style="color:var(--red);font-size:12px;margin-left:16px">- ${escapeHtml(e)}</div>`; }); res.warnings.forEach(w => { html += `<div style="color:var(--yellow);font-size:12px;margin-left:16px">- ${escapeHtml(w)}</div>`; }); html += '</div>'; }); if (rd.fixes_applied) { html += '<div style="color:var(--accent);margin-top:8px">Auto-fix applied</div>'; } html += '</div></div>'; });
+                    html += '</div>';
+                }
+            } else { document.getElementById('simStatus').textContent = 'Running...'; }
+            document.getElementById('simResults').innerHTML = html;
+        } catch(e) {}
+    }
+
+    let comparePolling = null;
+    async function startCompare() {
+        const message = document.getElementById('messageInput').value.trim();
+        if (!message) { alert('Enter a requirement first'); return; }
+        const provider = document.getElementById('provider').value;
+        const modelMap = { 'groq': 'groqModel', 'gemini': 'geminiModel', 'openai': 'openaiModel', 'ollama': 'ollamaModel', 'claude': 'claudeModel' };
+        const model = document.getElementById(modelMap[provider]).value;
+        document.getElementById('btnCompare').disabled = true;
+        document.getElementById('compareStatus').textContent = 'Starting...';
+        document.getElementById('compareLogs').innerHTML = '';
+        document.getElementById('compareReport').innerHTML = '';
+        ['aws','azure','gcp'].forEach(c => { document.getElementById('card-' + c).querySelector('.code-body').innerHTML = '<div style="text-align:center;color:var(--yellow);padding:20px">Running...</div>'; });
+        try {
+            const resp = await fetch('/api/compare', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message, provider, model, iac_tool: document.getElementById('iacTool').value, output_dir: document.getElementById('outputDir').value || 'output', ollama_url: provider === 'ollama' ? document.getElementById('ollamaUrl').value : null }) });
+            const data = await resp.json();
+            if (data.error) { document.getElementById('compareStatus').textContent = 'Error: ' + data.error; document.getElementById('btnCompare').disabled = false; return; }
+            comparePolling = setInterval(pollCompare, 3000);
+        } catch(e) { document.getElementById('compareStatus').textContent = 'Error: ' + e.message; document.getElementById('btnCompare').disabled = false; }
+    }
+
+    async function pollCompare() {
+        try {
+            const resp = await fetch('/api/compare/status'); const data = await resp.json();
+            let logHtml = '';
+            const cloudColors = {'aws': '#ff9900', 'azure': '#0078d4', 'gcp': '#4285f4', 'all': 'var(--accent)'};
+            data.logs.slice(-20).forEach(log => { const color = cloudColors[log.cloud] || 'var(--text-dim)'; logHtml += `<div class="log-entry"><span style="color:${color};font-weight:600;min-width:60px;display:inline-block">${log.cloud.toUpperCase()}</span> <span class="log-msg">${escapeHtml(log.message)}</span></div>`; });
+            document.getElementById('compareLogs').innerHTML = logHtml;
+            if (!data.running) {
+                clearInterval(comparePolling); document.getElementById('btnCompare').disabled = false;
+                if (data.error) { document.getElementById('compareStatus').textContent = 'Error: ' + data.error; }
+                else if (data.report) {
+                    const r = data.report;
+                    document.getElementById('compareStatus').innerHTML = `<span style="color:var(--green);font-weight:600">Complete</span> — ${r.total_time.toFixed(1)}s total`;
+                    ['aws','azure','gcp'].forEach(cloud => {
+                        const card = document.getElementById('card-' + cloud); const cr = r.clouds[cloud]; if (!cr) return;
+                        let cardHtml = '';
+                        if (cr.status === 'complete') { cardHtml += `<div style="color:var(--green);font-weight:600;margin-bottom:8px">Complete (${cr.time.toFixed(1)}s)</div>`; cardHtml += `<div style="font-size:13px"><strong>Files:</strong> ${cr.files.length}</div>`; cardHtml += `<div style="font-size:13px;margin-top:4px"><strong>Services:</strong></div>`; cr.services.forEach(s => { cardHtml += `<div style="font-size:12px;color:var(--text-dim);margin-left:8px">- ${escapeHtml(s)}</div>`; }); }
+                        else if (cr.status === 'error') { cardHtml = `<div style="color:var(--red)">Failed: ${escapeHtml(cr.error)}</div>`; }
+                        else { cardHtml = `<div style="color:var(--yellow)">Running...</div>`; }
+                        card.querySelector('.code-body').innerHTML = cardHtml;
+                    });
+                    if (r.comparison) { document.getElementById('compareReport').innerHTML = `<div class="code-viewer"><div class="code-header">Comparison Report</div><div class="code-body md-content">${simpleMarkdown(r.comparison)}</div></div>`; }
+                }
+            } else {
+                data.logs.forEach(log => { if (log.message.includes('Complete in')) { const card = document.getElementById('card-' + log.cloud); if (card) card.querySelector('.code-body').innerHTML = `<div style="color:var(--green);text-align:center;padding:20px">Done</div>`; } });
+                document.getElementById('compareStatus').textContent = `Running... (${data.logs.length} steps)`;
+            }
+        } catch(e) {}
+    }
+
+    const PROVIDERS_CONFIG = [
+        {id:'groq', name:'Groq', env:'GROQ_API_KEY', placeholder:'gsk_...', url:'https://console.groq.com/keys', tag:'FREE', tagColor:'var(--green)'},
+        {id:'gemini', name:'Google Gemini', env:'GEMINI_API_KEY', placeholder:'AIza...', url:'https://aistudio.google.com/apikey', tag:'FREE', tagColor:'var(--green)'},
+        {id:'together', name:'Together AI', env:'TOGETHER_API_KEY', placeholder:'...', url:'https://api.together.ai/settings/api-keys', tag:'$25 free', tagColor:'var(--blue)'},
+        {id:'mistral', name:'Mistral AI', env:'MISTRAL_API_KEY', placeholder:'...', url:'https://console.mistral.ai/api-keys', tag:'Free tier', tagColor:'var(--blue)'},
+        {id:'deepseek', name:'DeepSeek', env:'DEEPSEEK_API_KEY', placeholder:'...', url:'https://platform.deepseek.com/api_keys', tag:'~$0.001', tagColor:'var(--yellow)'},
+        {id:'cohere', name:'Cohere', env:'COHERE_API_KEY', placeholder:'...', url:'https://dashboard.cohere.com/api-keys', tag:'Free trial', tagColor:'var(--blue)'},
+        {id:'openai', name:'OpenAI', env:'OPENAI_API_KEY', placeholder:'sk-...', url:'https://platform.openai.com/api-keys', tag:'~$0.03', tagColor:'var(--yellow)'},
+        {id:'claude', name:'Anthropic Claude', env:'ANTHROPIC_API_KEY', placeholder:'sk-ant-...', url:'https://console.anthropic.com/settings/keys', tag:'~$0.15', tagColor:'var(--yellow)'},
+        {id:'azure_openai', name:'Azure OpenAI', env:'AZURE_OPENAI_API_KEY', placeholder:'...', url:'https://portal.azure.com', tag:'~$0.03', tagColor:'var(--yellow)', extra:'AZURE_OPENAI_ENDPOINT'},
+        {id:'bedrock', name:'AWS Bedrock', env:null, placeholder:'', url:'', tag:'~$0.002', tagColor:'var(--yellow)', note:'Uses aws configure'},
+    ];
+
+    async function saveApiKey(keyName, keyValue) {
+        if (!keyValue) return;
+        try { const resp = await fetch('/api/save-key', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key_name: keyName, key_value: keyValue}) }); return (await resp.json()).status === 'saved'; } catch(e) { return false; }
+    }
+    function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; renderKeysPanel(); }
+    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+
+    async function renderKeysPanel() {
+        const keysResp = await fetch('/api/keys'); const keysData = await keysResp.json();
+        let html = '';
+        PROVIDERS_CONFIG.forEach(p => {
+            const info = keysData[p.id] || {}; const configured = info.configured;
+            const statusDot = configured ? `<span style="color:var(--green)">Configured</span>` : `<span style="color:var(--text-dim)">Not set</span>`;
+            html += `<div class="glass-card" style="padding:14px;margin-bottom:10px">`;
+            html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
+            html += `<div><strong>${p.name}</strong> <span style="color:${p.tagColor};font-size:11px;background:${p.tagColor}22;padding:2px 8px;border-radius:10px;margin-left:6px">${p.tag}</span></div>`;
+            html += `<div style="font-size:12px">${statusDot}</div></div>`;
+            if (p.env) {
+                html += `<div style="display:flex;gap:8px;align-items:center">`;
+                html += `<input type="password" id="settings_${p.id}" placeholder="${info.masked || p.placeholder}" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:13px">`;
+                html += `<button onclick="saveKeyFromSettings('${p.id}','${p.env}')" class="btn btn-primary" style="padding:8px 16px;font-size:12px" id="btn_${p.id}">Save</button>`;
+                if (p.url) html += `<a href="${p.url}" target="_blank" style="color:var(--accent);font-size:12px;white-space:nowrap">Get key</a>`;
+                html += `</div>`;
+                if (p.extra) { html += `<div style="margin-top:8px;display:flex;gap:8px"><input type="text" id="settings_${p.id}_extra" placeholder="Endpoint URL..." style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:13px"><button onclick="saveKeyFromSettings('${p.id}_extra','${p.extra}')" class="btn btn-primary" style="padding:8px 16px;font-size:12px">Save</button></div>`; }
+            } else if (p.note) { html += `<div style="color:var(--text-dim);font-size:12px">${p.note}</div>`; }
+            html += `</div>`;
+        });
+        document.getElementById('keysList').innerHTML = html;
+        document.getElementById('settingsOllamaUrl').value = document.getElementById('ollamaUrl')?.value || 'http://192.168.50.73:11434';
+    }
+
+    async function saveKeyFromSettings(providerId, envKey) {
+        const input = document.getElementById('settings_' + providerId); const btn = document.getElementById('btn_' + providerId);
+        if (!input || !input.value.trim()) return;
+        btn.textContent = 'Saving...'; btn.disabled = true;
+        const saved = await saveApiKey(envKey, input.value.trim());
+        if (saved) { btn.textContent = 'Saved!'; btn.style.background = 'var(--green)'; input.value = ''; setTimeout(() => { btn.textContent = 'Save'; btn.style.background = ''; btn.disabled = false; renderKeysPanel(); }, 1500); }
+        else { btn.textContent = 'Failed'; btn.style.background = 'var(--red)'; setTimeout(() => { btn.textContent = 'Save'; btn.style.background = ''; btn.disabled = false; }, 1500); }
+    }
+    async function loadKeyStatus() {}
+
+    // ---- Theme Toggle ----
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('themeBtn');
+        if (body.classList.contains('light')) {
+            body.classList.remove('light');
+            btn.textContent = 'Light';
+            localStorage.setItem('theme', 'dark');
+        } else {
+            body.classList.add('light');
+            btn.textContent = 'Dark';
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+    function loadTheme() {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') {
+            document.body.classList.add('light');
+            document.getElementById('themeBtn').textContent = 'Dark';
+        }
+    }
+
+    // ---- Init ----
+    loadTheme();
+    onProviderChange();
+    onCloudChange();
+    checkOllama();
+    loadKeyStatus();
+</script>
+
+</body>
+</html>
