@@ -213,30 +213,105 @@ def generate_deployment_guide(
                 result += "\n\n### Architecture Diagram\n\n" + mermaid_clean
             sections.append(result + "\n\n---\n\n")
         except Exception as e:
-            status(f"  Warning: {sec_name} generation failed: {e}")
-            sections.append(f"## {sec_num}. {sec_name}\n\n*Generation failed: {e}*\n\n---\n\n")
+            # Clean error — don't dump raw API error JSON into the document
+            err_short = str(e)[:80].split('{')[0].strip()
+            status(f"  Warning: {sec_name} skipped (provider limit reached)")
+            sections.append(f"## {sec_num}. {sec_name}\n\n*This section was not generated due to provider rate limits. Re-run with a different provider or wait for limits to reset.*\n\n---\n\n")
 
     # =================== ASSEMBLE FULL DOCUMENT ===================
     status("Assembling final document...")
     full_doc = "\n\n".join(sections)
 
-    # Add footer
     full_doc += f"""
 
 ---
 
-> **Document generated automatically by IaCraft**
+> **Document generated automatically by IaCraft v2.0**
 > Generated: {now} | Cloud: {cloud} | Region: {region} | IaC: {iac_tool}
 > This document should be reviewed by a qualified cloud architect before production deployment.
 """
 
-    # Write to file
+    # Write files in multiple formats
     doc_dir = os.path.join(output_dir, "docs")
     os.makedirs(doc_dir, exist_ok=True)
 
-    doc_path = os.path.join(doc_dir, "DEPLOYMENT_GUIDE.md")
-    with open(doc_path, "w", encoding="utf-8") as f:
+    # 1. Markdown
+    md_path = os.path.join(doc_dir, "DEPLOYMENT_GUIDE.md")
+    with open(md_path, "w", encoding="utf-8") as f:
         f.write(full_doc)
+    status(f"Saved: {md_path}")
 
-    status(f"Deployment guide saved: {doc_path}")
+    # 2. HTML (always works)
+    try:
+        import markdown
+        html_content = markdown.markdown(full_doc, extensions=['tables', 'fenced_code'])
+        html_full = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>IaCraft Deployment Guide</title>
+<style>
+body {{ font-family: 'Segoe UI', system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #1a1a2e; line-height: 1.7; }}
+h1 {{ color: #7c3aed; border-bottom: 2px solid #7c3aed; padding-bottom: 8px; }}
+h2 {{ color: #1a1a2e; margin-top: 32px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }}
+h3 {{ color: #374151; margin-top: 24px; }}
+table {{ width: 100%; border-collapse: collapse; margin: 12px 0; }}
+th, td {{ padding: 8px 12px; border: 1px solid #e5e7eb; text-align: left; }}
+th {{ background: #f9fafb; font-weight: 600; }}
+code {{ background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }}
+pre {{ background: #1e1e2e; color: #cdd6f4; padding: 16px; border-radius: 8px; overflow-x: auto; }}
+pre code {{ background: none; color: inherit; }}
+blockquote {{ border-left: 3px solid #7c3aed; padding: 8px 16px; background: #f5f3ff; margin: 16px 0; color: #6b7280; }}
+hr {{ border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }}
+@media print {{ body {{ max-width: 100%; margin: 0; }} }}
+</style></head><body>{html_content}</body></html>"""
+        html_path = os.path.join(doc_dir, "DEPLOYMENT_GUIDE.html")
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_full)
+        status(f"Saved: {html_path}")
+    except Exception:
+        pass
+
+    # 3. DOCX
+    try:
+        from docx import Document as DocxDocument
+        from docx.shared import Pt, Inches, RGBColor
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+        doc = DocxDocument()
+        style = doc.styles['Normal']
+        style.font.name = 'Calibri'
+        style.font.size = Pt(11)
+
+        for line in full_doc.split('\n'):
+            line = line.strip()
+            if not line or line == '---':
+                continue
+            if line.startswith('# '):
+                p = doc.add_heading(line[2:], level=1)
+            elif line.startswith('## '):
+                p = doc.add_heading(line[3:], level=2)
+            elif line.startswith('### '):
+                p = doc.add_heading(line[4:], level=3)
+            elif line.startswith('- '):
+                doc.add_paragraph(line[2:], style='List Bullet')
+            elif line.startswith('| ') and '---' not in line:
+                # Simple table row — add as paragraph for now
+                cells = [c.strip() for c in line.split('|') if c.strip()]
+                doc.add_paragraph('  |  '.join(cells))
+            elif line.startswith('```'):
+                continue
+            elif line.startswith('>'):
+                p = doc.add_paragraph(line[1:].strip())
+                p.style = 'Quote' if 'Quote' in [s.name for s in doc.styles] else 'Normal'
+            else:
+                # Clean markdown bold
+                clean = line.replace('**', '').replace('*', '').replace('`', '')
+                if clean:
+                    doc.add_paragraph(clean)
+
+        docx_path = os.path.join(doc_dir, "DEPLOYMENT_GUIDE.docx")
+        doc.save(docx_path)
+        status(f"Saved: {docx_path}")
+    except Exception as e:
+        status(f"  DOCX generation skipped: {e}")
+
+    status("All document formats generated")
     return full_doc

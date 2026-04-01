@@ -30,8 +30,18 @@ from ..config import (
 )
 from ..engine import PipelineEngine
 
+from fastapi.middleware.cors import CORSMiddleware
+
 BASE_DIR = Path(__file__).parent
 app = FastAPI(title="IaCraft", version="2.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:15000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -533,5 +543,33 @@ async def download_all():
     return Response(
         content=buffer.getvalue(),
         media_type="application/zip",
-        headers={"Content-Disposition": "attachment; filename=message-to-iaac-output.zip"},
+        headers={"Content-Disposition": "attachment; filename=iacraft-output.zip"},
+    )
+
+
+@app.get("/api/download/guide/{fmt}")
+async def download_guide(fmt: str):
+    """Download deployment guide in specified format (md, html, docx)."""
+    from fastapi.responses import FileResponse
+
+    doc_dir = Path("output/docs")
+    files = {
+        "md": ("DEPLOYMENT_GUIDE.md", "text/markdown"),
+        "html": ("DEPLOYMENT_GUIDE.html", "text/html"),
+        "docx": ("DEPLOYMENT_GUIDE.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    }
+
+    if fmt not in files:
+        return JSONResponse({"error": f"Format {fmt} not supported. Use: md, html, docx"}, status_code=400)
+
+    filename, media_type = files[fmt]
+    filepath = doc_dir / filename
+
+    if not filepath.exists():
+        return JSONResponse({"error": f"{filename} not found. Generate IaC first."}, status_code=404)
+
+    return FileResponse(
+        path=str(filepath),
+        media_type=media_type,
+        filename=filename,
     )

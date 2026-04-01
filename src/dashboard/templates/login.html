@@ -3,340 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IaCraft — Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Sign In - IaCraft</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-base: #09090b;
+            --bg-card: #18181b;
+            --bg-input: #18181b;
+            --border-default: #27272a;
+            --border-hover: #3f3f46;
+            --border-focus: #7c3aed;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-placeholder: #71717a;
+            --text-muted: #52525b;
+            --violet-600: #7c3aed;
+            --violet-500: #8b5cf6;
+            --violet-400: #a78bfa;
+            --violet-glow: rgba(124, 58, 237, 0.25);
+            --error-text: #fca5a5;
+            --error-bg: rgba(239, 68, 68, 0.08);
+            --error-border: rgba(239, 68, 68, 0.15);
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #0a0015;
-            background-image:
-                radial-gradient(ellipse at 20% 50%, rgba(120, 50, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(50, 100, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
-            color: #fafafa;
             overflow: hidden;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Floating orbs */
-        .orb {
+        /* Radial violet glow */
+        body::before {
+            content: '';
             position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: float 20s ease-in-out infinite;
+            top: -30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
             pointer-events: none;
-        }
-        .orb-1 { width: 400px; height: 400px; background: rgba(168, 85, 247, 0.3); top: -100px; left: -100px; }
-        .orb-2 { width: 350px; height: 350px; background: rgba(59, 130, 246, 0.25); bottom: -80px; right: -80px; animation-delay: -7s; }
-        .orb-3 { width: 200px; height: 200px; background: rgba(139, 92, 246, 0.2); top: 50%; left: 60%; animation-delay: -14s; }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(30px, -30px) scale(1.05); }
-            50% { transform: translate(-20px, 20px) scale(0.95); }
-            75% { transform: translate(20px, 10px) scale(1.02); }
+            z-index: 0;
         }
 
-        .login-container {
-            width: 420px;
+        /* Dot grid pattern overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, #27272a 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 400px;
+            padding: 0 20px;
             position: relative;
             z-index: 1;
+            animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
-        /* Logo area */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { filter: drop-shadow(0 0 6px rgba(124, 58, 237, 0.3)); }
+            50% { filter: drop-shadow(0 0 14px rgba(124, 58, 237, 0.55)); }
+        }
+
         .logo-area {
             text-align: center;
             margin-bottom: 32px;
         }
-        .logo-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, #a855f7, #6366f1, #3b82f6);
-            border-radius: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
+
+        .logo-area img {
+            width: 44px;
+            height: 44px;
             margin-bottom: 16px;
-            box-shadow: 0 8px 32px rgba(168, 85, 247, 0.3);
-        }
-        .logo-area h1 {
-            font-size: 26px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #e2e8f0, #a855f7, #60a5fa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .logo-area p {
-            color: rgba(255,255,255,0.5);
-            font-size: 14px;
-            margin-top: 6px;
+            animation: logoPulse 3s ease-in-out infinite;
         }
 
-        /* Glass card */
-        .login-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 36px;
-            box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        .logo-area h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .logo-area p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1),
+                        0 8px 40px rgba(0, 0, 0, 0.35);
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
+
         .form-group label {
             display: block;
             font-size: 13px;
             font-weight: 500;
-            color: rgba(255,255,255,0.7);
-            margin-bottom: 8px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
         }
-        .input-wrapper {
-            position: relative;
-        }
-        .input-wrapper .icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 16px;
-            opacity: 0.4;
-        }
-        .form-group input {
+
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
             width: 100%;
-            padding: 12px 14px 12px 42px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: #fafafa;
+            padding: 10px 12px;
             font-size: 14px;
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-input);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
             outline: none;
-            transition: all 0.2s;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
-        .form-group input:focus {
-            border-color: rgba(168, 85, 247, 0.5);
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
-            background: rgba(255, 255, 255, 0.08);
+
+        .form-group input[type="text"]::placeholder,
+        .form-group input[type="password"]::placeholder {
+            color: var(--text-placeholder);
         }
-        .form-group input::placeholder {
-            color: rgba(255,255,255,0.25);
+
+        .form-group input[type="text"]:hover,
+        .form-group input[type="password"]:hover {
+            border-color: var(--border-hover);
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="password"]:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--violet-glow);
         }
 
         .remember-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            font-size: 13px;
-        }
-        .remember-row label {
-            display: flex;
             align-items: center;
             gap: 8px;
-            color: rgba(255,255,255,0.6);
-            cursor: pointer;
+            margin-bottom: 22px;
         }
+
         .remember-row input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
             width: 16px;
             height: 16px;
-            accent-color: #a855f7;
+            border: 1px solid var(--border-default);
+            border-radius: 4px;
+            background: var(--bg-input);
             cursor: pointer;
+            position: relative;
+            transition: border-color 0.15s ease, background 0.15s ease;
+            flex-shrink: 0;
         }
-        .forgot-link {
-            color: #a855f7;
-            text-decoration: none;
-            font-size: 13px;
-        }
-        .forgot-link:hover { color: #c084fc; }
 
-        .btn-login {
-            width: 100%;
-            padding: 13px;
-            border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #a855f7, #7c3aed, #6366f1);
-            color: white;
-            font-size: 15px;
-            font-weight: 600;
-            font-family: 'Inter', system-ui, sans-serif;
+        .remember-row input[type="checkbox"]:hover {
+            border-color: var(--border-hover);
+        }
+
+        .remember-row input[type="checkbox"]:checked {
+            background: var(--violet-600);
+            border-color: var(--violet-600);
+        }
+
+        .remember-row input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            width: 4px;
+            height: 8px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .remember-row input[type="checkbox"]:focus-visible {
+            box-shadow: 0 0 0 3px var(--violet-glow);
+        }
+
+        .remember-row label {
+            font-size: 13px;
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
+            user-select: none;
         }
-        .btn-login:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 24px rgba(168, 85, 247, 0.4);
+
+        .btn-primary {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+            color: #fff;
+            background: var(--violet-600);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.1s ease;
         }
-        .btn-login:active { transform: translateY(0); }
-        .btn-login:disabled {
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--violet-500);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
         }
 
-        .error-msg {
-            color: #f87171;
-            font-size: 13px;
-            text-align: center;
-            margin-top: 12px;
-            display: none;
+        .btn-primary:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--violet-glow);
         }
 
         .divider {
             display: flex;
             align-items: center;
-            margin: 24px 0;
             gap: 12px;
+            margin: 20px 0;
         }
-        .divider::before, .divider::after {
+
+        .divider::before,
+        .divider::after {
             content: '';
             flex: 1;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            background: var(--border-default);
         }
+
         .divider span {
-            color: rgba(255,255,255,0.3);
             font-size: 12px;
+            color: var(--text-muted);
+            text-transform: lowercase;
         }
 
-        .btn-guest {
+        .btn-ghost {
+            display: block;
             width: 100%;
-            padding: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            background: rgba(255,255,255,0.03);
-            color: rgba(255,255,255,0.7);
+            padding: 10px 16px;
             font-size: 14px;
-            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 500;
+            font-family: inherit;
+            color: var(--text-secondary);
+            background: transparent;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
             cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-guest:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: rgba(255,255,255,0.2);
-            color: #fafafa;
+            transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
         }
 
-        .footer-text {
+        .btn-ghost:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-ghost:active {
+            transform: scale(0.98);
+        }
+
+        .btn-ghost:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--violet-glow);
+        }
+
+        .error-msg {
+            display: none;
+            margin-bottom: 18px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: var(--error-text);
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            border-radius: var(--radius-lg);
+        }
+
+        .footer {
             text-align: center;
-            margin-top: 24px;
+            margin-top: 28px;
             font-size: 12px;
-            color: rgba(255,255,255,0.3);
+            color: var(--text-muted);
+            letter-spacing: 0.01em;
         }
     </style>
 </head>
 <body>
+    <div class="login-wrapper">
+        <div class="logo-area">
+            <img src="/static/logo.svg" alt="IaCraft">
+            <h1>IaCraft</h1>
+            <p>Craft Cloud Infrastructure from Natural Language</p>
+        </div>
 
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
-<div class="orb orb-3"></div>
-
-<div class="login-container">
-    <div class="logo-area">
-        <div class="logo-icon" style="background:none;box-shadow:none"><img src="/static/logo-large.svg" width="64" height="64"></div>
-        <h1>IaCraft</h1>
-        <p>Craft Cloud Infrastructure from Natural Language</p>
-    </div>
-
-    <div class="login-card">
-        <form onsubmit="return handleLogin(event)">
-            <div class="form-group">
-                <label>Username</label>
-                <div class="input-wrapper">
-                    <span class="icon">&#128100;</span>
-                    <input type="text" id="username" placeholder="Enter username" autocomplete="username" required>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Password</label>
-                <div class="input-wrapper">
-                    <span class="icon">&#128274;</span>
-                    <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" required>
-                </div>
-            </div>
-
-            <div class="remember-row">
-                <label><input type="checkbox" id="remember" checked> Remember me</label>
-            </div>
-
-            <button type="submit" class="btn-login" id="btnLogin">Sign In</button>
+        <div class="card">
             <div class="error-msg" id="errorMsg"></div>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" autocomplete="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+                </div>
+
+                <div class="remember-row">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Remember me</label>
+                </div>
+
+                <button type="submit" class="btn-primary" id="btnLogin">Sign In</button>
+            </form>
 
             <div class="divider"><span>or</span></div>
 
-            <button type="button" class="btn-guest" onclick="guestLogin()">Continue as Guest</button>
-        </form>
+            <button type="button" class="btn-ghost" onclick="guestLogin()">Continue as Guest</button>
+        </div>
+
+        <div class="footer">IaCraft v2.0 &middot; 11 LLM Providers &middot; AWS / Azure / GCP</div>
     </div>
 
-    <div class="footer-text">
-        IaCraft &bull; 11 LLM Providers &bull; AWS / Azure / GCP &bull; Enterprise Grade
-    </div>
-</div>
-
-<script>
-    async function handleLogin(e) {
-        e.preventDefault();
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
-        const remember = document.getElementById('remember').checked;
-        const btn = document.getElementById('btnLogin');
-        const errEl = document.getElementById('errorMsg');
-
-        btn.disabled = true;
-        btn.textContent = 'Signing in...';
-        errEl.style.display = 'none';
-
-        try {
-            const resp = await fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username, password, remember})
-            });
-            const data = await resp.json();
-
-            if (data.success) {
-                window.location.href = '/dashboard';
-            } else {
-                errEl.textContent = data.error || 'Invalid credentials';
+    <script>
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+            const btn = document.getElementById('btnLogin');
+            const errEl = document.getElementById('errorMsg');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+            errEl.style.display = 'none';
+            try {
+                const resp = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password, remember})
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    errEl.textContent = data.error || 'Invalid credentials';
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In';
+                }
+            } catch(err) {
+                errEl.textContent = 'Connection error';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Sign In';
             }
-        } catch(err) {
-            errEl.textContent = 'Connection error';
-            errEl.style.display = 'block';
-            btn.disabled = false;
-            btn.textContent = 'Sign In';
         }
-    }
 
-    function guestLogin() {
-        fetch('/api/login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username: 'guest', password: 'guest', remember: false})
-        }).then(r => r.json()).then(data => {
-            if (data.success) window.location.href = '/dashboard';
-        });
-    }
-
-    // Auto-focus username
-    document.getElementById('username').focus();
-</script>
-
+        function guestLogin() {
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: 'guest', password: 'guest', remember: false})
+            }).then(r => r.json()).then(data => {
+                if (data.success) window.location.href = '/dashboard';
+            });
+        }
+        document.getElementById('username').focus();
+    </script>
 </body>
 </html>
