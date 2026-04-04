@@ -551,7 +551,7 @@ FALLBACK_CHAIN = {
     "deepseek": ["groq", "gemini", "ollama"],
     "cohere": ["groq", "gemini", "ollama"],
     "together": ["groq", "gemini", "ollama"],
-    "ollama": [],
+    "ollama": ["groq", "gemini"],
 }
 
 # Env var required per provider
@@ -594,7 +594,7 @@ class LLMClient:
 
     def _is_rate_limit(self, error: Exception) -> bool:
         err = str(error).lower()
-        return any(kw in err for kw in ["429", "rate_limit", "resource_exhausted", "quota", "too many requests", "throttl"])
+        return any(kw in err for kw in ["429", "rate_limit", "rate limit", "resource_exhausted", "quota exceeded", "too many requests", "too_many_requests", "throttling", "tokens per"])
 
     def _get_fallback(self):
         chain = FALLBACK_CHAIN.get(self._active_provider, [])

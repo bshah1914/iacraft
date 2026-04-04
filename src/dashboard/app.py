@@ -26,18 +26,24 @@ from ..config import (
     DEFAULT_REGIONS,
     DEFAULT_MODELS,
     DEFAULT_OLLAMA_URL,
+    DEFAULT_OUTPUT_DIR,
     CLOUD_SERVICE_MAP,
+    APP_VERSION,
+    CORS_ORIGINS,
+    ADMIN_PASSWORD,
+    GUEST_PASSWORD,
+    SESSION_MAX_AGE_DAYS,
 )
 from ..engine import PipelineEngine
 
 from fastapi.middleware.cors import CORSMiddleware
 
 BASE_DIR = Path(__file__).parent
-app = FastAPI(title="IaCraft", version="2.0.0")
+app = FastAPI(title="IaCraft", version=APP_VERSION)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:15000", "http://127.0.0.1:3000"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,15 +55,14 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # ---- Auth System ----
 # Default users (stored in .env or defaults)
 USERS = {
-    "admin": os.getenv("ADMIN_PASSWORD", "admin123"),
-    "guest": "guest",
+    "admin": ADMIN_PASSWORD,
 }
 # Active sessions
 _sessions = {}
 
 
 def _hash(s: str) -> str:
-    return hashlib.sha256(s.encode()).hexdigest()[:16]
+    return hashlib.sha256(s.encode()).hexdigest()
 
 
 def _check_session(request: Request) -> bool:
@@ -114,7 +119,7 @@ async def login(request: Request):
         token = secrets.token_hex(32)
         _sessions[token] = {"user": username}
         response = JSONResponse({"success": True, "user": username})
-        max_age = 30 * 24 * 3600 if remember else None  # 30 days or session
+        max_age = SESSION_MAX_AGE_DAYS * 24 * 3600 if remember else None
         response.set_cookie("session_token", token, max_age=max_age, httponly=True, samesite="lax")
         return response
     return JSONResponse({"success": False, "error": "Invalid username or password"})

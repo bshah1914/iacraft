@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>IaCraft Platform Architecture Report</title>
+<style>
+@page { size: A4; margin: 20mm; }
+body { font-family: Calibri, "Segoe UI", system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; color: #1a1a2e; line-height: 1.7; font-size: 14px; }
+h1 { color: #7c3aed; font-size: 28px; border-bottom: 3px solid #7c3aed; padding-bottom: 10px; margin-top: 40px; }
+h2 { color: #1e1b4b; font-size: 20px; margin-top: 36px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+h3 { color: #374151; font-size: 16px; margin-top: 24px; }
+p { margin-bottom: 10px; color: #374151; }
+strong { color: #1a1a2e; }
+table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 13px; }
+th { background: #f5f3ff; font-weight: 600; text-align: left; padding: 10px 12px; border: 1px solid #e5e7eb; color: #1e1b4b; }
+td { padding: 8px 12px; border: 1px solid #e5e7eb; color: #374151; }
+tr:nth-child(even) td { background: #fafafa; }
+code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12px; color: #7c3aed; }
+pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-size: 12px; line-height: 1.6; margin: 14px 0; }
+pre code { background: none; color: inherit; padding: 0; }
+blockquote { border-left: 4px solid #7c3aed; padding: 12px 16px; background: #f5f3ff; margin: 16px 0; color: #6b7280; font-style: italic; border-radius: 0 8px 8px 0; }
+hr { border: none; border-top: 1px solid #e5e7eb; margin: 28px 0; }
+ul, ol { padding-left: 24px; margin-bottom: 12px; }
+li { margin-bottom: 4px; color: #374151; }
+@media print { 
+    body { max-width: 100%; padding: 0; }
+    pre { white-space: pre-wrap; }
+    table { page-break-inside: avoid; }
+    h2 { page-break-before: auto; }
+}
+</style></head><body><h1>IaCraft Platform — Architecture &amp; Strategy Report</h1>
+<p><strong>Version</strong>: 4.0 Planning Document
+<strong>Date</strong>: April 2026
+<strong>Author</strong>: IaCraft Engineering
+<strong>Classification</strong>: Internal — Strategic</p>
+<hr />
+<h2>1. Executive Summary</h2>
+<p>IaCraft started as a natural language to Infrastructure as Code converter. This report outlines the architecture to evolve it into a <strong>full DevOps AI Platform</strong> that handles the complete infrastructure lifecycle:</p>
+<pre><code>DESIGN → BUILD → VALIDATE → DEPLOY → MONITOR → OPTIMIZE
+</code></pre>
+<p>The platform will use AI at every stage — from understanding requirements to self-healing production infrastructure.</p>
+<hr />
+<h2>2. Current State (v3.0)</h2>
+<h3>What IaCraft Does Today</h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Status</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NL to IaC</td>
+<td>Working</td>
+<td>Convert plain English to Terraform/Pulumi/CDK/Bicep</td>
+</tr>
+<tr>
+<td>Multi-Cloud</td>
+<td>Working</td>
+<td>AWS, Azure, GCP support</td>
+</tr>
+<tr>
+<td>11 LLM Providers</td>
+<td>Working</td>
+<td>Groq, Gemini, OpenAI, Claude, Bedrock, Azure, Mistral, DeepSeek, Cohere, Together, Ollama</td>
+</tr>
+<tr>
+<td>Auto-Fallback</td>
+<td>Working</td>
+<td>Rate limit on one → auto-switch to next</td>
+</tr>
+<tr>
+<td>Code Validation</td>
+<td>Working</td>
+<td>terraform fmt + validate + checkov</td>
+</tr>
+<tr>
+<td>Auto-Fix Loop</td>
+<td>Working</td>
+<td>Detect errors → LLM fix → re-validate (5 rounds)</td>
+</tr>
+<tr>
+<td>Multi-Cloud Compare</td>
+<td>Working</td>
+<td>AWS vs Azure vs GCP side-by-side</td>
+</tr>
+<tr>
+<td>Deployment Guide</td>
+<td>Working</td>
+<td>4 doc levels (Quick/Standard/Enterprise/Compliance)</td>
+</tr>
+<tr>
+<td>Security Controls</td>
+<td>Working</td>
+<td>IAM, encryption, compliance mapping</td>
+</tr>
+<tr>
+<td>Cost Estimation</td>
+<td>Working</td>
+<td>Monthly breakdown + optimization</td>
+</tr>
+<tr>
+<td>Web Dashboard</td>
+<td>Working</td>
+<td>Login, dark/light theme, settings</td>
+</tr>
+<tr>
+<td>CLI</td>
+<td>Working</td>
+<td>5 commands (generate, simulate, analyze, providers, dashboard)</td>
+</tr>
+</tbody>
+</table>
+<h3>Current Architecture</h3>
+<pre><code>User → Dashboard/CLI → AI Engine → Pipeline (12 steps) → Output Files
+                          │
+                    ┌─────┴──────┐
+                    │ LLM Router │
+                    │ (11 providers) │
+                    └────────────┘
+</code></pre>
+<h3>Current Limitations</h3>
+<ol>
+<li><strong>No actual deployment</strong> — generates code but doesn't deploy it</li>
+<li><strong>No monitoring</strong> — no visibility after deployment</li>
+<li><strong>No drift detection</strong> — can't detect manual changes</li>
+<li><strong>No CI/CD integration</strong> — no pipeline generation</li>
+<li><strong>No state management</strong> — no history of past generations</li>
+<li><strong>No team collaboration</strong> — single user</li>
+<li><strong>Static validation only</strong> — no runtime checks</li>
+<li><strong>No cost tracking</strong> — estimates only, no actual spend comparison</li>
+</ol>
+<hr />
+<h2>3. Target Architecture (v4.0+)</h2>
+<h3>Platform Overview</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│                    IaCraft DevOps Platform                       │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │                  Presentation Layer                         │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │ │
+│  │  │Web       │  │CLI       │  │API       │  │Slack/    │  │ │
+│  │  │Dashboard │  │Terminal  │  │REST      │  │Teams Bot │  │ │
+│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │ │
+│  └────────────────────────┬───────────────────────────────────┘ │
+│                           │                                      │
+│  ┌────────────────────────▼───────────────────────────────────┐ │
+│  │                  Application Layer                          │ │
+│  │                                                             │ │
+│  │  ┌─────────────────────────────────────────────────────┐   │ │
+│  │  │              AI Engine (LLM Router)                  │   │ │
+│  │  │  Groq → Bedrock → Gemini → Ollama (auto-fallback)  │   │ │
+│  │  └─────────────────────┬───────────────────────────────┘   │ │
+│  │                        │                                    │ │
+│  │  ┌─────────┬───────────┼───────────┬─────────┬──────────┐ │ │
+│  │  │         │           │           │         │          │ │ │
+│  │  ▼         ▼           ▼           ▼         ▼          ▼ │ │
+│  │ Design   Build      Validate    Deploy    Monitor   Optimize│ │
+│  │ Module   Module     Module      Module    Module    Module  │ │
+│  │                                                             │ │
+│  │  ┌─────────────────────────────────────────────────────┐   │ │
+│  │  │           Workflow Engine (State Machine)            │   │ │
+│  │  │  Design → Build → Validate → Deploy → Monitor       │   │ │
+│  │  └─────────────────────────────────────────────────────┘   │ │
+│  │                                                             │ │
+│  │  ┌─────────────────────────────────────────────────────┐   │ │
+│  │  │              Policy Engine (OPA)                     │   │ │
+│  │  │  Security policies, cost budgets, compliance rules   │   │ │
+│  │  └─────────────────────────────────────────────────────┘   │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                    Data Layer                                │ │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────────┐  │ │
+│  │  │Project   │ │Template  │ │Execution │ │Terraform      │  │ │
+│  │  │Database  │ │Library   │ │History   │ │State Store    │  │ │
+│  │  │(SQLite/  │ │(Git)     │ │(Logs)    │ │(S3/Blob/GCS) │  │ │
+│  │  │Postgres) │ │          │ │          │ │               │  │ │
+│  │  └──────────┘ └──────────┘ └──────────┘ └───────────────┘  │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                  Integration Layer                           │ │
+│  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌──────────┐ │ │
+│  │  │AWS     │ │Azure   │ │GCP     │ │GitHub  │ │Terraform │ │ │
+│  │  │APIs    │ │APIs    │ │APIs    │ │GitLab  │ │Cloud     │ │ │
+│  │  └────────┘ └────────┘ └────────┘ └────────┘ └──────────┘ │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr />
+<h2>4. Module Specifications</h2>
+<h3>4.1 Design Module (Existing — Enhanced)</h3>
+<p><strong>Purpose</strong>: Convert natural language to cloud architecture design</p>
+<p><strong>Current Features</strong>:
+- Requirement analysis
+- Cloud-agnostic architecture JSON
+- Cloud service mapping
+- Architecture diagram (Mermaid)</p>
+<p><strong>Planned Enhancements</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Template Library</td>
+<td>Pre-built architectures (3-tier, microservices, serverless, data pipeline)</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Architecture Review</td>
+<td>AI reviews design and suggests improvements</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Well-Architected Check</td>
+<td>Validate against AWS/Azure/GCP Well-Architected Framework</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Multi-Region Design</td>
+<td>Auto-design DR and multi-region architectures</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Dependency Graph</td>
+<td>Visual dependency map between resources</td>
+<td>Low</td>
+</tr>
+</tbody>
+</table>
+<h3>4.2 Build Module (Existing — Enhanced)</h3>
+<p><strong>Purpose</strong>: Generate deployment-ready IaC code</p>
+<p><strong>Current Features</strong>:
+- Terraform code generation (10 files)
+- Support for Pulumi, CDK, Bicep, CloudFormation</p>
+<p><strong>Planned Enhancements</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Code Quality Scoring</td>
+<td>Rate generated code 0-100 on best practices</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Module-based Generation</td>
+<td>Use Terraform modules instead of flat resources</td>
+<td>High</td>
+</tr>
+<tr>
+<td>State Backend Config</td>
+<td>Auto-configure S3/Blob/GCS state backend</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Variable Validation</td>
+<td>Add validation blocks to all variables</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Provider Pinning</td>
+<td>Pin provider versions for reproducibility</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Workspace Support</td>
+<td>Multi-environment (dev/staging/prod)</td>
+<td>Medium</td>
+</tr>
+</tbody>
+</table>
+<h3>4.3 Validate Module (Existing — Enhanced)</h3>
+<p><strong>Purpose</strong>: Validate and auto-fix generated code</p>
+<p><strong>Current Features</strong>:
+- terraform fmt
+- terraform init + validate
+- checkov security scanning
+- Auto-fix loop (5 rounds)</p>
+<p><strong>Planned Enhancements</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tfsec Integration</td>
+<td>Additional security scanner</td>
+<td>High</td>
+</tr>
+<tr>
+<td>terrascan Integration</td>
+<td>Policy-as-code validation</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Cost Policy Check</td>
+<td>Reject if estimated cost exceeds budget</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Custom Policy Rules</td>
+<td>User-defined OPA policies</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Dependency Check</td>
+<td>Validate all resource references resolve</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Blast Radius Analysis</td>
+<td>Show what <code>terraform apply</code> will change</td>
+<td>Medium</td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 Deploy Module (NEW)</h3>
+<p><strong>Purpose</strong>: Deploy infrastructure directly from IaCraft</p>
+<p><strong>Features</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plan Preview</td>
+<td>Run <code>terraform plan</code> and show results in dashboard</td>
+<td>Critical</td>
+</tr>
+<tr>
+<td>Apply with Approval</td>
+<td>User reviews plan → clicks Apply → real-time logs</td>
+<td>Critical</td>
+</tr>
+<tr>
+<td>Rollback</td>
+<td>One-click <code>terraform destroy</code> or state rollback</td>
+<td>Critical</td>
+</tr>
+<tr>
+<td>Environment Management</td>
+<td>Dev/Staging/Prod with variable overrides</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Deployment History</td>
+<td>Log every plan/apply with timestamps and user</td>
+<td>High</td>
+</tr>
+<tr>
+<td>GitOps Mode</td>
+<td>Push to Git → auto-deploy via webhook</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Dry Run Mode</td>
+<td>Simulate deployment without actually applying</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Approval Workflow</td>
+<td>Require 2 approvals for production deployments</td>
+<td>Medium</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Technical Design</strong>:</p>
+<pre><code>User clicks &quot;Deploy&quot;
+  │
+  ├── terraform init (background)
+  ├── terraform plan -out=tfplan
+  │     └── Parse plan JSON → show in dashboard
+  │         ├── Resources to ADD (green)
+  │         ├── Resources to CHANGE (yellow)
+  │         └── Resources to DESTROY (red)
+  │
+  ├── User reviews → clicks &quot;Apply&quot;
+  │     └── terraform apply tfplan
+  │         └── Stream output to dashboard in real-time
+  │
+  └── Save deployment record to database
+</code></pre>
+<p><strong>Security Requirements</strong>:
+- AWS/Azure/GCP credentials stored encrypted
+- MFA required for production deployments
+- Audit log of all deployments
+- Role-based access (viewer/deployer/admin)</p>
+<h3>4.5 Monitor Module (NEW)</h3>
+<p><strong>Purpose</strong>: Post-deployment health monitoring</p>
+<p><strong>Features</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Health Dashboard</td>
+<td>Show status of all deployed resources</td>
+<td>High</td>
+</tr>
+<tr>
+<td>CloudWatch Integration</td>
+<td>Pull metrics from AWS CloudWatch</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Azure Monitor Integration</td>
+<td>Pull metrics from Azure Monitor</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>GCP Monitoring Integration</td>
+<td>Pull metrics from GCP Cloud Monitoring</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Custom Alerts</td>
+<td>Define alert rules in dashboard</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Slack/Teams Notifications</td>
+<td>Send alerts to chat channels</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Uptime Monitoring</td>
+<td>HTTP health checks for endpoints</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Log Aggregation</td>
+<td>Pull and display CloudWatch/Azure logs</td>
+<td>Medium</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Metrics to Track</strong>:
+- CPU/Memory utilization
+- Network throughput
+- Database connections
+- Error rates (4xx/5xx)
+- Response latency (p50/p95/p99)
+- Cost per hour/day
+- Resource count vs expected</p>
+<h3>4.6 Optimize Module (NEW)</h3>
+<p><strong>Purpose</strong>: AI-powered cost and performance optimization</p>
+<p><strong>Features</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cost Anomaly Detection</td>
+<td>Alert when daily cost spikes unexpectedly</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Right-sizing Suggestions</td>
+<td>"EC2 t3.large is only using 10% CPU → suggest t3.small"</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Reserved Instance Advisor</td>
+<td>"You'd save 40% by switching to 1-year reserved"</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Unused Resource Finder</td>
+<td>"This EBS volume has been detached for 30 days"</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Security Posture Score</td>
+<td>Continuous compliance score (0-100)</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Performance Suggestions</td>
+<td>"Add read replica to reduce DB latency"</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>One-Click Optimize</td>
+<td>Apply suggested optimizations via Terraform</td>
+<td>Low</td>
+</tr>
+</tbody>
+</table>
+<h3>4.7 CI/CD Generator (NEW)</h3>
+<p><strong>Purpose</strong>: Auto-generate deployment pipelines</p>
+<p><strong>Supported Platforms</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Output</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GitHub Actions</td>
+<td><code>.github/workflows/deploy.yml</code></td>
+<td>Critical</td>
+</tr>
+<tr>
+<td>GitLab CI</td>
+<td><code>.gitlab-ci.yml</code></td>
+<td>High</td>
+</tr>
+<tr>
+<td>Jenkins</td>
+<td><code>Jenkinsfile</code></td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Azure DevOps</td>
+<td><code>azure-pipelines.yml</code></td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>AWS CodePipeline</td>
+<td>CloudFormation template</td>
+<td>Low</td>
+</tr>
+<tr>
+<td>Bitbucket Pipelines</td>
+<td><code>bitbucket-pipelines.yml</code></td>
+<td>Low</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pipeline Stages Generated</strong>:</p>
+<pre><code class="language-yaml">stages:
+  - lint        # terraform fmt -check
+  - validate    # terraform validate
+  - security    # checkov scan
+  - plan        # terraform plan
+  - approve     # manual approval gate
+  - apply       # terraform apply
+  - verify      # post-deploy health checks
+  - notify      # Slack/Teams notification
+</code></pre>
+<h3>4.8 Drift Detector (NEW)</h3>
+<p><strong>Purpose</strong>: Detect when infrastructure drifts from IaC state</p>
+<p><strong>How It Works</strong>:</p>
+<pre><code>Every N minutes:
+  ├── terraform plan (detect changes)
+  ├── If drift detected:
+  │   ├── Alert user (dashboard + Slack)
+  │   ├── Show diff (what changed, who changed it)
+  │   ├── Suggest fix:
+  │   │   ├── Option A: Update Terraform to match reality
+  │   │   └── Option B: Revert reality to match Terraform
+  │   └── Auto-remediate if policy allows
+  └── Log drift event to history
+</code></pre>
+<p><strong>Drift Types</strong>:
+| Type | Example | Severity |
+|------|---------|----------|
+| Security | Security group rule added manually | Critical |
+| Configuration | Instance type changed | High |
+| Tags | Tags modified or removed | Medium |
+| Resource Added | New resource created outside Terraform | Medium |
+| Resource Deleted | Resource deleted outside Terraform | Critical |</p>
+<h3>4.9 AI Chat (NEW)</h3>
+<p><strong>Purpose</strong>: Ask natural language questions about your infrastructure</p>
+<p><strong>Examples</strong>:</p>
+<pre><code>User: &quot;Is my database encrypted?&quot;
+AI: &quot;Yes, RDS instance 'web-app-db' has storage_encrypted=true
+     using KMS key arn:aws:kms:ap-south-1:xxx:key/xxx&quot;
+
+User: &quot;What would break if I delete the NAT gateway?&quot;
+AI: &quot;Private subnet instances would lose internet access.
+     This affects: EC2 instances in the ASG, Lambda functions
+     that need external API calls.&quot;
+
+User: &quot;How can I reduce my monthly cost by 30%?&quot;
+AI: &quot;1. Switch EC2 from t3.large to t3.medium (saves $30/mo)
+     2. Use reserved instances for RDS (saves $45/mo)
+     3. Enable S3 lifecycle to move old data to Glacier (saves $15/mo)
+     Total savings: $90/mo (32% reduction)&quot;
+</code></pre>
+<hr />
+<h2>5. Data Architecture</h2>
+<h3>Database Schema</h3>
+<pre><code class="language-sql">-- Projects
+CREATE TABLE projects (
+    id          UUID PRIMARY KEY,
+    name        TEXT NOT NULL,
+    cloud       TEXT NOT NULL,  -- aws/azure/gcp
+    region      TEXT NOT NULL,
+    iac_tool    TEXT DEFAULT 'terraform',
+    status      TEXT DEFAULT 'draft',  -- draft/deployed/destroyed
+    created_at  TIMESTAMP,
+    updated_at  TIMESTAMP
+);
+
+-- Generations (each pipeline run)
+CREATE TABLE generations (
+    id          UUID PRIMARY KEY,
+    project_id  UUID REFERENCES projects(id),
+    message     TEXT NOT NULL,
+    provider    TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    duration_s  FLOAT,
+    status      TEXT,  -- complete/error
+    results     JSONB,
+    created_at  TIMESTAMP
+);
+
+-- Deployments
+CREATE TABLE deployments (
+    id              UUID PRIMARY KEY,
+    project_id      UUID REFERENCES projects(id),
+    generation_id   UUID REFERENCES generations(id),
+    environment     TEXT DEFAULT 'dev',
+    plan_output     TEXT,
+    apply_output    TEXT,
+    status          TEXT,  -- planned/applying/deployed/failed/destroyed
+    deployed_by     TEXT,
+    deployed_at     TIMESTAMP,
+    destroyed_at    TIMESTAMP
+);
+
+-- Drift Events
+CREATE TABLE drift_events (
+    id          UUID PRIMARY KEY,
+    project_id  UUID REFERENCES projects(id),
+    drift_type  TEXT,  -- security/config/tags/added/deleted
+    resource    TEXT,
+    details     JSONB,
+    severity    TEXT,  -- critical/high/medium/low
+    status      TEXT,  -- detected/resolved/ignored
+    detected_at TIMESTAMP
+);
+
+-- Cost Tracking
+CREATE TABLE cost_records (
+    id          UUID PRIMARY KEY,
+    project_id  UUID REFERENCES projects(id),
+    date        DATE,
+    estimated   FLOAT,
+    actual      FLOAT,
+    breakdown   JSONB,
+    created_at  TIMESTAMP
+);
+</code></pre>
+<h3>File Storage</h3>
+<pre><code>data/
+├── projects/
+│   └── {project-id}/
+│       ├── terraform/          # Generated IaC files
+│       ├── architecture/       # Design artifacts
+│       ├── docs/              # Deployment guides
+│       ├── plans/             # Terraform plan outputs
+│       ├── deployments/       # Deployment logs
+│       └── drift/             # Drift detection reports
+├── templates/                 # Reusable architecture templates
+└── policies/                  # OPA policy files
+</code></pre>
+<hr />
+<h2>6. Security Architecture</h2>
+<h3>Authentication &amp; Authorization</h3>
+<pre><code>┌─────────────────────────────────────┐
+│           Auth Layer                 │
+│                                      │
+│  ┌──────────┐    ┌───────────────┐  │
+│  │ Local    │    │ SSO           │  │
+│  │ (user/   │ OR │ (SAML/OIDC)  │  │
+│  │  pass)   │    │ Google/Azure  │  │
+│  └──────────┘    └───────────────┘  │
+│                                      │
+│  ┌──────────────────────────────┐   │
+│  │ Role-Based Access Control    │   │
+│  │                              │   │
+│  │  Viewer:   Read-only         │   │
+│  │  Developer: Generate + Plan  │   │
+│  │  Deployer:  + Apply (non-prod)│  │
+│  │  Admin:     + Apply (prod)   │   │
+│  │  Owner:     + Settings       │   │
+│  └──────────────────────────────┘   │
+└─────────────────────────────────────┘
+</code></pre>
+<h3>Secrets Management</h3>
+<table>
+<thead>
+<tr>
+<th>Secret Type</th>
+<th>Storage</th>
+<th>Encryption</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LLM API Keys</td>
+<td>.env file (local) / AWS Secrets Manager (cloud)</td>
+<td>AES-256</td>
+</tr>
+<tr>
+<td>Cloud Credentials</td>
+<td>AWS STS / Azure AD / GCP SA</td>
+<td>Provider-managed</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>Local SQLite / RDS (cloud)</td>
+<td>At-rest encryption</td>
+</tr>
+<tr>
+<td>TF State</td>
+<td>S3 + DynamoDB lock</td>
+<td>SSE-KMS</td>
+</tr>
+</tbody>
+</table>
+<h3>Audit Trail</h3>
+<p>Every action logged:</p>
+<pre><code class="language-json">{
+    &quot;timestamp&quot;: &quot;2026-04-03T10:30:00Z&quot;,
+    &quot;user&quot;: &quot;admin&quot;,
+    &quot;action&quot;: &quot;terraform_apply&quot;,
+    &quot;project&quot;: &quot;web-app-prod&quot;,
+    &quot;environment&quot;: &quot;production&quot;,
+    &quot;resources_changed&quot;: 5,
+    &quot;ip_address&quot;: &quot;10.0.1.50&quot;,
+    &quot;approval&quot;: &quot;approved_by: cto@company.com&quot;
+}
+</code></pre>
+<hr />
+<h2>7. LLM Strategy</h2>
+<h3>Provider Selection Matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Use Case</th>
+<th>Primary</th>
+<th>Fallback</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IaC Generation</td>
+<td>Groq (Llama 3.3 70B)</td>
+<td>Bedrock (Claude Haiku)</td>
+<td>Fast + accurate</td>
+</tr>
+<tr>
+<td>Code Review</td>
+<td>Groq (Llama 3.3 70B)</td>
+<td>Bedrock (Llama 70B)</td>
+<td>Best for code</td>
+</tr>
+<tr>
+<td>Documentation</td>
+<td>Groq (Llama 3.3 70B)</td>
+<td>Gemini Flash</td>
+<td>Good writing</td>
+</tr>
+<tr>
+<td>AI Chat</td>
+<td>Groq (Llama 3.3 70B)</td>
+<td>Ollama (trio-llm)</td>
+<td>Conversational</td>
+</tr>
+<tr>
+<td>Security Audit</td>
+<td>Bedrock (Claude Haiku)</td>
+<td>Groq</td>
+<td>Best for analysis</td>
+</tr>
+</tbody>
+</table>
+<h3>Cost Projections</h3>
+<table>
+<thead>
+<tr>
+<th>Usage</th>
+<th>Groq (Free)</th>
+<th>Bedrock Fallback</th>
+<th>Total/Month</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10 runs/day</td>
+<td>$0</td>
+<td>$0 (within Groq limits)</td>
+<td><strong>$0</strong></td>
+</tr>
+<tr>
+<td>50 runs/day</td>
+<td>$0 (30 on Groq)</td>
+<td>$0.20 (20 on Bedrock)</td>
+<td><strong>$6</strong></td>
+</tr>
+<tr>
+<td>200 runs/day</td>
+<td>$0 (30 on Groq)</td>
+<td>$1.70 (170 on Bedrock)</td>
+<td><strong>$51</strong></td>
+</tr>
+<tr>
+<td>1000 runs/day (team)</td>
+<td>$0</td>
+<td>$10</td>
+<td><strong>$300</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>Token Budget per Pipeline Run</h3>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Input Tokens</th>
+<th>Output Tokens</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Analyze</td>
+<td>~500</td>
+<td>~300</td>
+<td>800</td>
+</tr>
+<tr>
+<td>2-3. Architecture</td>
+<td>~800</td>
+<td>~500</td>
+<td>1,300</td>
+</tr>
+<tr>
+<td>4. Mapping</td>
+<td>~600</td>
+<td>~400</td>
+<td>1,000</td>
+</tr>
+<tr>
+<td>5. IaC Generation</td>
+<td>~1,200</td>
+<td>~3,000</td>
+<td>4,200</td>
+</tr>
+<tr>
+<td>6. Diagram</td>
+<td>~400</td>
+<td>~300</td>
+<td>700</td>
+</tr>
+<tr>
+<td>7. Security</td>
+<td>~500</td>
+<td>~1,000</td>
+<td>1,500</td>
+</tr>
+<tr>
+<td>8. Compliance</td>
+<td>~800</td>
+<td>~800</td>
+<td>1,600</td>
+</tr>
+<tr>
+<td>9. Cost</td>
+<td>~400</td>
+<td>~600</td>
+<td>1,000</td>
+</tr>
+<tr>
+<td>10. Validation</td>
+<td>~300</td>
+<td>~500</td>
+<td>800</td>
+</tr>
+<tr>
+<td>11. Auto-Fix</td>
+<td>~2,000</td>
+<td>~2,000</td>
+<td>4,000</td>
+</tr>
+<tr>
+<td>12. Guide</td>
+<td>~1,000</td>
+<td>~3,000</td>
+<td>4,000</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>~8,500</strong></td>
+<td><strong>~12,400</strong></td>
+<td><strong>~20,900</strong></td>
+</tr>
+</tbody>
+</table>
+<p>At Groq free tier (100K tokens/day): <strong>~4-5 full pipeline runs/day</strong>
+At Bedrock Claude Haiku: <strong>~$0.01 per run</strong></p>
+<hr />
+<h2>8. Roadmap</h2>
+<h3>Phase 1: Foundation (v3.0) — COMPLETE</h3>
+<ul>
+<li>[x] NL to IaC pipeline (12 steps)</li>
+<li>[x] 11 LLM providers with auto-fallback</li>
+<li>[x] Code validation + auto-fix</li>
+<li>[x] Multi-cloud comparison</li>
+<li>[x] Deployment guide (4 levels)</li>
+<li>[x] Modern SaaS dashboard</li>
+<li>[x] Login + auth</li>
+</ul>
+<h3>Phase 2: Deploy &amp; CI/CD (v4.0) — Q2 2026</h3>
+<ul>
+<li>[ ] Terraform plan preview in dashboard</li>
+<li>[ ] One-click terraform apply</li>
+<li>[ ] Deployment history + rollback</li>
+<li>[ ] GitHub Actions pipeline generator</li>
+<li>[ ] GitLab CI pipeline generator</li>
+<li>[ ] Code quality scoring</li>
+<li>[ ] Project database (SQLite)</li>
+<li>[ ] Template library (5 pre-built architectures)</li>
+</ul>
+<h3>Phase 3: Monitor &amp; Detect (v4.1) — Q3 2026</h3>
+<ul>
+<li>[ ] Drift detection (hourly terraform plan)</li>
+<li>[ ] Health monitoring dashboard</li>
+<li>[ ] CloudWatch/Azure Monitor integration</li>
+<li>[ ] Slack/Teams alert notifications</li>
+<li>[ ] AI Chat ("ask your infra")</li>
+<li>[ ] Cost tracking (estimated vs actual)</li>
+</ul>
+<h3>Phase 4: Optimize &amp; Scale (v5.0) — Q4 2026</h3>
+<ul>
+<li>[ ] AI cost optimization suggestions</li>
+<li>[ ] Right-sizing recommendations</li>
+<li>[ ] Unused resource finder</li>
+<li>[ ] Security posture scoring</li>
+<li>[ ] Multi-user + team support</li>
+<li>[ ] SSO integration (SAML/OIDC)</li>
+<li>[ ] API for external integrations</li>
+<li>[ ] Terraform Cloud/Enterprise integration</li>
+</ul>
+<hr />
+<h2>9. Competitive Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>IaCraft</th>
+<th>Terraform Cloud</th>
+<th>Pulumi Cloud</th>
+<th>Env0</th>
+<th>Spacelift</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NL to IaC</td>
+<td><strong>Yes</strong></td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Multi-Cloud</td>
+<td><strong>Yes</strong></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>AI Code Generation</td>
+<td><strong>Yes</strong></td>
+<td>No</td>
+<td>AI Assist</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Auto-Validation</td>
+<td><strong>Yes</strong></td>
+<td>Sentinel</td>
+<td>CrossGuard</td>
+<td>OPA</td>
+<td>OPA</td>
+</tr>
+<tr>
+<td>Auto-Fix</td>
+<td><strong>Yes</strong></td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Multi-Cloud Compare</td>
+<td><strong>Yes</strong></td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Deploy from UI</td>
+<td>Planned</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Drift Detection</td>
+<td>Planned</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Cost Estimation</td>
+<td><strong>Yes</strong></td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>AI Chat</td>
+<td>Planned</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Self-Hosted</td>
+<td><strong>Yes</strong></td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Free Tier</td>
+<td><strong>Yes (Groq)</strong></td>
+<td>Limited</td>
+<td>Limited</td>
+<td>Limited</td>
+<td>Limited</td>
+</tr>
+<tr>
+<td>11 LLM Providers</td>
+<td><strong>Yes</strong></td>
+<td>N/A</td>
+<td>1</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<p><strong>IaCraft's Unique Differentiator</strong>: The only platform that converts natural language to validated, deployment-ready IaC with AI-powered auto-fix — across 3 clouds, 5 IaC tools, and 11 LLM providers.</p>
+<hr />
+<h2>10. Infrastructure Requirements</h2>
+<h3>Self-Hosted (Current)</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CPU</td>
+<td>2+ cores</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>4GB minimum</td>
+</tr>
+<tr>
+<td>Disk</td>
+<td>10GB</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>3.9+</td>
+</tr>
+<tr>
+<td>Terraform</td>
+<td>1.5+</td>
+</tr>
+<tr>
+<td>Network</td>
+<td>Outbound HTTPS (for LLM APIs)</td>
+</tr>
+</tbody>
+</table>
+<h3>Production Deployment</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Recommended</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Server</td>
+<td>4 CPU, 8GB RAM</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>PostgreSQL 15+ (or SQLite for single-user)</td>
+</tr>
+<tr>
+<td>State Store</td>
+<td>S3 bucket with versioning</td>
+</tr>
+<tr>
+<td>Monitoring</td>
+<td>CloudWatch / Prometheus + Grafana</td>
+</tr>
+<tr>
+<td>CI/CD</td>
+<td>GitHub Actions</td>
+</tr>
+<tr>
+<td>SSL</td>
+<td>Let's Encrypt / ACM</td>
+</tr>
+</tbody>
+</table>
+<h3>Scaling Strategy</h3>
+<pre><code>Single User    →  SQLite + Local files
+Small Team     →  PostgreSQL + S3 state
+Enterprise     →  PostgreSQL + S3 + Redis cache + Load balancer
+</code></pre>
+<hr />
+<h2>11. Risk Assessment</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Impact</th>
+<th>Probability</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LLM generates insecure code</td>
+<td>High</td>
+<td>Medium</td>
+<td>checkov + tfsec validation, policy engine</td>
+</tr>
+<tr>
+<td>LLM rate limits during deployment</td>
+<td>Medium</td>
+<td>High</td>
+<td>Auto-fallback chain, queue system</td>
+</tr>
+<tr>
+<td>Terraform state corruption</td>
+<td>Critical</td>
+<td>Low</td>
+<td>State locking, versioned backups</td>
+</tr>
+<tr>
+<td>Unauthorized deployment</td>
+<td>Critical</td>
+<td>Low</td>
+<td>RBAC, approval workflows, audit log</td>
+</tr>
+<tr>
+<td>Cloud credential exposure</td>
+<td>Critical</td>
+<td>Low</td>
+<td>Secrets manager, no credentials in code</td>
+</tr>
+<tr>
+<td>AI hallucination in suggestions</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Validate all AI output, human review</td>
+</tr>
+<tr>
+<td>Cost overrun from deployment</td>
+<td>High</td>
+<td>Medium</td>
+<td>Cost policy checks before apply</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>12. Success Metrics</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Current</th>
+<th>Target (v4.0)</th>
+<th>Target (v5.0)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time to generate IaC</td>
+<td>42s</td>
+<td>42s</td>
+<td>30s</td>
+</tr>
+<tr>
+<td>Code validation pass rate</td>
+<td>~70%</td>
+<td>90%</td>
+<td>95%</td>
+</tr>
+<tr>
+<td>Deployment success rate</td>
+<td>N/A</td>
+<td>85%</td>
+<td>95%</td>
+</tr>
+<tr>
+<td>Drift detection time</td>
+<td>N/A</td>
+<td>&lt;1 hour</td>
+<td>&lt;15 min</td>
+</tr>
+<tr>
+<td>Cost estimation accuracy</td>
+<td>~60%</td>
+<td>80%</td>
+<td>90%</td>
+</tr>
+<tr>
+<td>User satisfaction</td>
+<td>N/A</td>
+<td>4/5</td>
+<td>4.5/5</td>
+</tr>
+<tr>
+<td>Monthly active projects</td>
+<td>N/A</td>
+<td>50</td>
+<td>500</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<blockquote>
+<p><strong>IaCraft Platform</strong> — From natural language to self-healing infrastructure.
+This document is a living architecture guide and will be updated as the platform evolves.</p>
+</blockquote></body></html>

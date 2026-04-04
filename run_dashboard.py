@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Launch the message-to-iaac web dashboard on port 15000."""
+"""Launch the IaCraft web dashboard."""
 
 import os
 import sys
-import signal
 import subprocess
 import uvicorn
 from dotenv import load_dotenv
 
 load_dotenv()
 
-PORT = 15000
+PORT = int(os.getenv("DASHBOARD_PORT", "15000"))
+HOST = os.getenv("DASHBOARD_HOST", "0.0.0.0")
 
 
 def kill_port(port):
@@ -40,6 +40,6 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "src.dashboard.app:app",
-        host="0.0.0.0",
+        host=HOST,
         port=PORT,
     )

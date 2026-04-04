@@ -180,12 +180,23 @@ Keep code concise. Use proper resource references.""",
 IMPORTANT RULES:
 - Use proper resource naming with variables
 - Include all required arguments for each resource
-- Use data sources where appropriate
-- Add proper tags to all resources
+- Use data sources where appropriate (e.g., data "aws_availability_zones")
+- Add tags using map format: tags = { Name = "x", Environment = "prod" }
+- Do NOT use deprecated list-of-maps tags format on aws_autoscaling_group
 - Use locals for computed values
 - Reference resources by their terraform IDs, not hardcoded values
 - Include proper depends_on where needed
-- NO placeholders or example IDs""",
+- NO placeholders or example IDs
+- For aws_autoscaling_policy use: autoscaling_group_name, NOT resource_id or scalable_dimension
+- For aws_launch_template add: metadata_options { http_tokens = "required" }
+- For aws_db_instance use: allocated_storage (NOT storage_size)
+- For aws_db_instance add: storage_encrypted = true, multi_az = true, copy_tags_to_snapshot = true
+- For aws_cloudwatch_log_group add: retention_in_days = 365
+- For aws_security_group add: description field
+- For aws_s3_bucket add: aws_s3_bucket_public_access_block resource
+- Every output must reference a resource that exists in the code
+- For required_providers use version = "~> 5.0" (not old pinned versions)
+- For required_version use ">= 1.5.0" (not exact version pins)""",
             "pulumi": "Generate complete Pulumi Python code in __main__.py with all resources.",
             "cloudformation": "Generate complete CloudFormation YAML template with all resources.",
             "cdk": "Generate complete AWS CDK TypeScript code with all constructs.",

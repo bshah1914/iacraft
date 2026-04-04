@@ -41,7 +41,7 @@ def _run_cmd(cmd: List[str], cwd: str, timeout: int = 60) -> tuple:
     try:
         result = subprocess.run(
             cmd, cwd=cwd, capture_output=True, text=True,
-            timeout=timeout, shell=True,
+            timeout=timeout,
         )
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired:
@@ -210,8 +210,7 @@ class TerraformValidator:
         results.append(self.run_fmt())
         init_result = self.run_init()
         results.append(init_result)
-        if init_result.passed:
-            results.append(self.run_validate())
+        results.append(self.run_validate())
         results.append(self.run_checkov())
         return results
 
@@ -219,7 +218,7 @@ class TerraformValidator:
 class CodeSimulator:
     """Self-healing code validator: validate → fix → re-validate loop."""
 
-    MAX_ROUNDS = 5
+    MAX_ROUNDS = int(os.getenv("VALIDATOR_MAX_ROUNDS", "5"))
 
     def __init__(
         self,

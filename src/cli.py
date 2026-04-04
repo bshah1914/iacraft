@@ -117,7 +117,7 @@ def status_callback(step: int, message: str):
 
 
 @click.group()
-@click.version_option(version="2.0.0", prog_name="iacraft")
+@click.version_option(version=os.getenv("APP_VERSION", "3.0.0"), prog_name="iacraft")
 def cli():
     """Convert natural language to Infrastructure as Code."""
     pass
@@ -167,7 +167,7 @@ def generate(message, cloud, iac, region, output, provider, model, ollama_url, s
     console.print(Panel(config_table, title="[bold]Configuration[/]", expand=False))
 
     # Validate provider-specific requirements
-    key_map = {"claude": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY", "groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY"}
+    key_map = {"claude": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY", "groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY", "mistral": "MISTRAL_API_KEY", "deepseek": "DEEPSEEK_API_KEY", "cohere": "COHERE_API_KEY", "together": "TOGETHER_API_KEY", "azure_openai": "AZURE_OPENAI_API_KEY"}
     if provider in key_map and not os.getenv(key_map[provider]):
         console.print(f"[bold red]Error:[/] {key_map[provider]} not set.")
         console.print(f"[dim]Tip: Use --provider groq (free) or --provider ollama (local)[/]")
@@ -269,6 +269,7 @@ def simulate(output, provider, model, ollama_url):
 
 def _run_simulator(output, provider, model, ollama_url):
     """Shared simulator logic for generate --simulate and simulate command."""
+    output = os.path.abspath(output)
     from .llm_client import LLMClient
     from .file_writer import FileWriter
     from .validator import CodeSimulator, TerraformValidator
@@ -346,7 +347,7 @@ def analyze(message, cloud, provider, model, ollama_url):
     console.print(f"\n[bold]Analyzing:[/] {user_message}")
     console.print(f"[dim]Provider: {provider} | Model: {effective_model}[/]\n")
 
-    key_map = {"claude": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY", "groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY"}
+    key_map = {"claude": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY", "groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY", "mistral": "MISTRAL_API_KEY", "deepseek": "DEEPSEEK_API_KEY", "cohere": "COHERE_API_KEY", "together": "TOGETHER_API_KEY", "azure_openai": "AZURE_OPENAI_API_KEY"}
     if provider in key_map and not os.getenv(key_map[provider]):
         console.print(f"[bold red]Error:[/] {key_map[provider]} not set.")
         sys.exit(1)
@@ -397,7 +398,7 @@ def providers():
 
 @cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to bind to")
-@click.option("--port", default=15000, type=int, help="Port to run on")
+@click.option("--port", default=int(os.getenv("DASHBOARD_PORT", "15000")), type=int, help="Port to run on")
 def dashboard(host, port):
     """Launch the web dashboard UI on port 15000."""
     import uvicorn
